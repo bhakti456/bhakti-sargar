@@ -1,0 +1,3807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>PhishDojo - Adaptive Scam Awareness Trainer</title>
+  <meta name="description" content="PhishDojo is an adaptive, game-based scam awareness trainer designed to help families and seniors spot digital traps across SMS, WhatsApp, and email.">
+  <style>
+    /* ==========================================================================
+       PHISHDOJO CORE DESIGN SYSTEM (CSS VARIABLES & THEMES)
+       ========================================================================== */
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #1e293b;
+      --bg-elevated: #334155;
+      --bg-input: #0f172a;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border-color: #334155;
+      --border-highlight: #475569;
+      
+      --accent-primary: #38bdf8;
+      --accent-hover: #0284c7;
+      --accent-glow: rgba(56, 189, 248, 0.25);
+      
+      --scam-color: #ef4444;
+      --scam-bg: rgba(239, 68, 68, 0.15);
+      --scam-glow: rgba(239, 68, 68, 0.3);
+      
+      --safe-color: #10b981;
+      --safe-bg: rgba(16, 185, 129, 0.15);
+      --safe-glow: rgba(16, 185, 129, 0.3);
+      
+      --warning-color: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.15);
+      
+      --urgency-color: #f97316;
+      --authority-color: #8b5cf6;
+      --fear-color: #ec4899;
+      --reward-color: #eab308;
+      
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6);
+      
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --radius-full: 9999px;
+      
+      --font-base: 16px;
+      --font-scale: 1;
+      --transition-fast: 0.15s ease;
+      --transition-normal: 0.25s ease;
+      --transition-smooth: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Light Theme */
+    body.light-theme {
+      --bg-primary: #f1f5f9;
+      --bg-secondary: #ffffff;
+      --bg-card: #ffffff;
+      --bg-elevated: #e2e8f0;
+      --bg-input: #f8fafc;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --border-color: #cbd5e1;
+      --border-highlight: #94a3b8;
+      --accent-primary: #0284c7;
+      --accent-hover: #0369a1;
+      --accent-glow: rgba(2, 132, 199, 0.2);
+      --scam-color: #dc2626;
+      --scam-bg: rgba(220, 38, 38, 0.1);
+      --safe-color: #059669;
+      --safe-bg: rgba(5, 150, 105, 0.1);
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.12);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Elderly & Accessibility Font Sizes */
+    body.font-large {
+      --font-scale: 1.15;
+    }
+    body.font-xlarge {
+      --font-scale: 1.3;
+    }
+
+    /* High Contrast Mode */
+    body.high-contrast {
+      --bg-primary: #000000;
+      --bg-secondary: #121212;
+      --bg-card: #181818;
+      --bg-elevated: #282828;
+      --text-primary: #ffffff;
+      --text-secondary: #e2e8f0;
+      --border-color: #ffffff;
+      --accent-primary: #38bdf8;
+      --scam-color: #ff4d4d;
+      --safe-color: #00ff88;
+    }
+
+    /* ==========================================================================
+       BASE RESETS & TYPOGRAPHY
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-size: calc(var(--font-base) * var(--font-scale));
+      line-height: 1.5;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background-color var(--transition-normal), color var(--transition-normal);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input, select, textarea {
+      font-family: inherit;
+      font-size: inherit;
+      color: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      background: none;
+      transition: all var(--transition-fast);
+      touch-action: manipulation;
+    }
+
+    a {
+      color: var(--accent-primary);
+      text-decoration: none;
+    }
+
+    /* ==========================================================================
+       LAYOUT & HEADER
+       ========================================================================== */
+    .app-header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(8px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-weight: 800;
+      font-size: 1.25rem;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .brand-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, #38bdf8 0%, #3b82f6 50%, #8b5cf6 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .brand-tag {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: var(--radius-full);
+      background: var(--accent-glow);
+      color: var(--accent-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border: 1px solid var(--accent-primary);
+      margin-left: 0.25rem;
+    }
+
+    .nav-tabs {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: var(--bg-elevated);
+      padding: 0.25rem;
+      border-radius: var(--radius-full);
+    }
+
+    .nav-btn {
+      padding: 0.45rem 0.85rem;
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all var(--transition-fast);
+    }
+
+    .nav-btn.active {
+      background: var(--accent-primary);
+      color: #ffffff;
+      box-shadow: 0 2px 8px var(--accent-glow);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .tool-btn {
+      padding: 0.45rem 0.65rem;
+      border-radius: var(--radius-md);
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border: 1px solid var(--border-color);
+      min-height: 38px;
+    }
+    .tool-btn:hover {
+      background: var(--border-highlight);
+      color: var(--text-primary);
+    }
+
+    /* Container */
+    .app-main {
+      flex: 1;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1.25rem 1rem 3rem 1rem;
+    }
+
+    /* ==========================================================================
+       STATS & STREAK BANNER
+       ========================================================================== */
+    .status-ribbon {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 0.75rem 1.25rem;
+      margin-bottom: 1.25rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .stats-group {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .stat-pill .icon {
+      font-size: 1.15rem;
+    }
+
+    .streak-badge {
+      color: #f97316;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-weight: 800;
+    }
+
+    .xp-badge {
+      color: #eab308;
+      font-weight: 800;
+    }
+
+    .rank-badge {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(139, 92, 246, 0.2));
+      color: var(--accent-primary);
+      padding: 0.25rem 0.65rem;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 700;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      text-transform: uppercase;
+    }
+
+    .progress-wrapper {
+      width: 100%;
+      margin-top: 0.4rem;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 7px;
+      background: var(--bg-elevated);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent-primary), #10b981);
+      border-radius: var(--radius-full);
+      transition: width var(--transition-smooth);
+    }
+
+    /* ==========================================================================
+       DOJO GAME SCREEN: PHONE / EMAIL MOCKUPS
+       ========================================================================== */
+    .mockup-container {
+      perspective: 1000px;
+      margin: 0 auto 1.5rem auto;
+      max-width: 620px;
+    }
+
+    .phone-frame {
+      background: var(--bg-secondary);
+      border: 2px solid var(--border-color);
+      border-radius: 28px;
+      box-shadow: var(--shadow-xl), 0 0 20px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: transform var(--transition-normal);
+    }
+
+    /* Top Notch / Header */
+    .phone-notch-bar {
+      background: rgba(15, 23, 42, 0.7);
+      padding: 0.45rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .notch-camera {
+      width: 60px;
+      height: 14px;
+      background: #000;
+      border-radius: var(--radius-full);
+      margin: 0 auto;
+    }
+
+    /* Medium Header Styles */
+    .medium-header {
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-card);
+    }
+
+    /* WhatsApp Style Header */
+    .medium-header.whatsapp {
+      background: #075e54;
+      color: #ffffff;
+      border-bottom: none;
+    }
+    .medium-header.whatsapp .sender-meta {
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    /* SMS Style Header */
+    .medium-header.sms {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+
+    /* Email Style Header */
+    .medium-header.email {
+      background: var(--bg-card);
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
+      padding: 0.85rem 1.25rem;
+    }
+
+    /* Job Style Header */
+    .medium-header.job {
+      background: #004182;
+      color: #ffffff;
+    }
+
+    .sender-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-full);
+      background: var(--bg-elevated);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--accent-primary);
+      flex-shrink: 0;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .sender-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .sender-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sender-handle {
+      font-size: 0.75rem;
+      opacity: 0.85;
+      font-family: monospace;
+      word-break: break-all;
+    }
+
+    .verified-icon {
+      color: #10b981;
+      display: inline-flex;
+    }
+
+    .unverified-tag {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      font-size: 0.65rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: var(--radius-full);
+      font-weight: 700;
+      text-transform: uppercase;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    /* Message Canvas / Body */
+    .phone-canvas {
+      padding: 1.25rem;
+      background: var(--bg-primary);
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+    }
+
+    .phone-canvas.whatsapp-bg {
+      background-color: #0b141a;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 16px 16px;
+    }
+
+    .security-notice {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: var(--radius-md);
+      padding: 0.45rem 0.75rem;
+      font-size: 0.75rem;
+      color: #fbbf24;
+      text-align: center;
+      margin-bottom: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+
+    /* Message Bubble */
+    .message-bubble {
+      max-width: 95%;
+      border-radius: 18px;
+      padding: 1rem 1.15rem;
+      position: relative;
+      font-size: 0.98rem;
+      line-height: 1.55;
+      box-shadow: var(--shadow-md);
+      word-break: break-word;
+      transition: all var(--transition-fast);
+    }
+
+    .message-bubble.incoming-sms {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      border-bottom-left-radius: 4px;
+      align-self: flex-start;
+    }
+
+    .message-bubble.incoming-whatsapp {
+      background: #202c33;
+      color: #e9edef;
+      border-bottom-left-radius: 4px;
+      align-self: flex-start;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .message-bubble.email-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      max-width: 100%;
+      color: var(--text-primary);
+    }
+
+    /* Interactive Spotter Tokens inside message */
+    .spot-token {
+      display: inline;
+      padding: 0.1rem 0.25rem;
+      margin: 0 0.1rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      position: relative;
+      transition: all var(--transition-fast);
+      border-bottom: 2px dashed rgba(245, 158, 11, 0.6);
+    }
+    .spot-token:hover {
+      background: rgba(245, 158, 11, 0.25);
+    }
+    .spot-token.user-flagged {
+      background: rgba(245, 158, 11, 0.4);
+      color: #fff;
+      font-weight: 700;
+      border: 1px solid #f59e0b;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+    }
+    .spot-token.user-flagged::before {
+      content: "🚩";
+      margin-right: 0.2rem;
+      font-size: 0.8em;
+    }
+
+    /* Revealed States */
+    .spot-token.revealed-flag {
+      background: rgba(239, 68, 68, 0.35) !important;
+      color: #fecaca !important;
+      border: 1.5px solid var(--scam-color) !important;
+      animation: pulseAlert 1.5s infinite;
+      font-weight: 700;
+    }
+    .spot-token.revealed-flag::after {
+      content: " ⚠️ RED FLAG";
+      font-size: 0.65em;
+      background: var(--scam-color);
+      color: white;
+      padding: 0.1rem 0.35rem;
+      border-radius: var(--radius-full);
+      margin-left: 0.3rem;
+      vertical-align: middle;
+      font-weight: 800;
+    }
+
+    @keyframes pulseAlert {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+    }
+
+    /* Message Meta Timestamp */
+    .msg-timestamp {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      text-align: right;
+    }
+
+    /* Clickable Link Spoofing Mockup */
+    .fake-cta-button {
+      display: block;
+      margin: 0.85rem auto 0.4rem auto;
+      text-align: center;
+      background: #2563eb;
+      color: white;
+      padding: 0.6rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-weight: 700;
+      font-size: 0.9rem;
+      pointer-events: none;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Instruction helper */
+    .spot-hint-bar {
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border-color);
+      padding: 0.65rem 1rem;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .spot-counter {
+      font-weight: 700;
+      color: var(--warning-color);
+    }
+
+    .tts-speaker-btn {
+      color: var(--accent-primary);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.3rem 0.6rem;
+      border-radius: var(--radius-full);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-color);
+    }
+
+    /* ==========================================================================
+       ACTION CONTROLS (SCAM VS SAFE)
+       ========================================================================== */
+    .decision-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .decision-btn {
+      padding: 1.1rem 1.25rem;
+      border-radius: var(--radius-lg);
+      font-size: 1.15rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      transition: all var(--transition-fast);
+      box-shadow: var(--shadow-md);
+      position: relative;
+      overflow: hidden;
+      min-height: 64px;
+    }
+
+    .decision-btn:active {
+      transform: scale(0.97);
+    }
+
+    .decision-btn.btn-scam {
+      background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+      color: #ffffff;
+      border: 2px solid #ef4444;
+    }
+    .decision-btn.btn-scam:hover {
+      box-shadow: 0 0 20px var(--scam-glow);
+      filter: brightness(1.1);
+    }
+
+    .decision-btn.btn-safe {
+      background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+      color: #ffffff;
+      border: 2px solid #10b981;
+    }
+    .decision-btn.btn-safe:hover {
+      box-shadow: 0 0 20px var(--safe-glow);
+      filter: brightness(1.1);
+    }
+
+    .decision-btn[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+      filter: grayscale(0.5);
+    }
+
+    /* ==========================================================================
+       FEEDBACK & EXPLAINER CARD (AFTER ANSWER)
+       ========================================================================== */
+    .explainer-card {
+      margin-top: 1.5rem;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      border: 2px solid var(--border-color);
+      overflow: hidden;
+      animation: slideUp 0.35s var(--transition-smooth);
+      box-shadow: var(--shadow-xl);
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .explainer-banner {
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      font-weight: 800;
+      font-size: 1.2rem;
+    }
+
+    .explainer-banner.correct {
+      background: var(--safe-bg);
+      color: var(--safe-color);
+      border-bottom: 2px solid var(--safe-color);
+    }
+
+    .explainer-banner.wrong {
+      background: var(--scam-bg);
+      color: var(--scam-color);
+      border-bottom: 2px solid var(--scam-color);
+    }
+
+    .explainer-content {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* Psychological 4 Levers */
+    .psych-triggers-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .section-mini-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .triggers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.6rem;
+    }
+
+    .trigger-badge {
+      padding: 0.6rem 0.75rem;
+      border-radius: var(--radius-md);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      opacity: 0.4;
+      transition: all var(--transition-fast);
+    }
+
+    .trigger-badge.active {
+      opacity: 1;
+      border-color: currentColor;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .trigger-badge.active.urgency {
+      color: var(--urgency-color);
+      background: rgba(249, 115, 22, 0.15);
+      border-color: var(--urgency-color);
+    }
+    .trigger-badge.active.authority {
+      color: var(--authority-color);
+      background: rgba(139, 92, 246, 0.15);
+      border-color: var(--authority-color);
+    }
+    .trigger-badge.active.fear {
+      color: var(--fear-color);
+      background: rgba(236, 72, 153, 0.15);
+      border-color: var(--fear-color);
+    }
+    .trigger-badge.active.reward {
+      color: var(--reward-color);
+      background: rgba(234, 179, 8, 0.15);
+      border-color: var(--reward-color);
+    }
+
+    /* Red Flags List */
+    .red-flags-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .red-flag-item {
+      background: var(--bg-card);
+      border-left: 4px solid var(--scam-color);
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      border-top: 1px solid var(--border-color);
+      border-right: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .red-flag-quote {
+      font-family: monospace;
+      font-weight: 700;
+      color: #f87171;
+      margin-bottom: 0.25rem;
+      display: block;
+    }
+
+    .safe-explanation-box {
+      background: rgba(16, 185, 129, 0.1);
+      border-left: 4px solid var(--safe-color);
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      padding: 0.85rem 1rem;
+      font-size: 0.92rem;
+      color: var(--text-primary);
+      border-top: 1px solid rgba(16, 185, 129, 0.2);
+      border-right: 1px solid rgba(16, 185, 129, 0.2);
+      border-bottom: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    /* Takeaway Tip Box */
+    .takeaway-box {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(59, 130, 246, 0.15));
+      border: 1px solid var(--accent-primary);
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1.15rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .takeaway-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .takeaway-text {
+      font-size: 0.92rem;
+      color: var(--text-primary);
+    }
+    .takeaway-label {
+      font-weight: 800;
+      color: var(--accent-primary);
+      display: block;
+      margin-bottom: 0.2rem;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* Next / Continue Button */
+    .continue-btn {
+      background: var(--accent-primary);
+      color: #ffffff;
+      padding: 1rem 1.5rem;
+      border-radius: var(--radius-md);
+      font-size: 1.05rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 12px var(--accent-glow);
+    }
+    .continue-btn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    /* ==========================================================================
+       SCAM OF THE DAY SCREEN
+       ========================================================================== */
+    .daily-scam-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .daily-badge-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .daily-tag {
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      color: white;
+      font-weight: 800;
+      font-size: 0.75rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: var(--radius-full);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .daily-title {
+      font-size: 1.45rem;
+      font-weight: 800;
+      margin-bottom: 0.6rem;
+      color: var(--text-primary);
+    }
+
+    .daily-story {
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+      line-height: 1.6;
+    }
+
+    .breakdown-box {
+      background: var(--bg-elevated);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .breakdown-item {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .breakdown-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .breakdown-num {
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-full);
+      background: var(--accent-primary);
+      color: white;
+      font-weight: 700;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ==========================================================================
+       FAMILY MODE SCREEN
+       ========================================================================== */
+    .family-mode-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .family-hero {
+      text-align: center;
+      padding: 1rem 0 1.5rem 0;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 1.5rem;
+    }
+
+    .family-hero-icon {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .family-hero h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 0.35rem;
+    }
+
+    .family-hero p {
+      color: var(--text-secondary);
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    .preset-selector-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .preset-card {
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.15rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .preset-card:hover {
+      border-color: var(--accent-primary);
+      transform: translateY(-2px);
+    }
+    .preset-card.selected {
+      border-color: var(--accent-primary);
+      background: rgba(56, 189, 248, 0.08);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .preset-title {
+      font-weight: 800;
+      font-size: 1.05rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .share-result-box {
+      background: var(--bg-elevated);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin-top: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .share-link-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .share-input {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 1rem;
+      color: var(--text-primary);
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+
+    .code-display-box {
+      text-align: center;
+      padding: 0.85rem;
+      background: var(--bg-card);
+      border: 1px dashed var(--accent-primary);
+      border-radius: var(--radius-md);
+    }
+    .code-display-num {
+      font-family: monospace;
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: var(--accent-primary);
+      letter-spacing: 0.15em;
+    }
+
+    /* ==========================================================================
+       FINAL RESULTS SCREEN (SCORE, WEAKNESS CHART & CHECKLIST)
+       ========================================================================== */
+    .final-score-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 2rem 1.5rem;
+      box-shadow: var(--shadow-xl);
+      text-align: center;
+    }
+
+    .score-circle-container {
+      position: relative;
+      width: 170px;
+      height: 170px;
+      margin: 0 auto 1.5rem auto;
+    }
+
+    .score-number {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    .score-value {
+      font-size: 3rem;
+      font-weight: 900;
+      line-height: 1;
+      color: var(--text-primary);
+    }
+    .score-max {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .score-grade {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 0.35rem;
+    }
+
+    /* Badges Display */
+    .badges-shelf {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin: 1.5rem 0;
+    }
+
+    .badge-item {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.65rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      transition: all var(--transition-fast);
+    }
+    .badge-item.unlocked {
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.25);
+    }
+    .badge-item.locked {
+      opacity: 0.45;
+      filter: grayscale(1);
+    }
+
+    /* Weakness Chart Container */
+    .chart-container-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin: 1.75rem 0;
+      text-align: left;
+    }
+
+    .chart-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .chart-bar-item {
+      margin-bottom: 0.85rem;
+    }
+    .chart-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+    }
+    .chart-bar-track {
+      height: 10px;
+      background: var(--bg-elevated);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+    .chart-bar-progress {
+      height: 100%;
+      border-radius: var(--radius-full);
+      transition: width 1s var(--transition-smooth);
+    }
+
+    /* 8-Point Personalized Checklist */
+    .checklist-container {
+      text-align: left;
+      margin: 2rem 0;
+    }
+
+    .checklist-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .checklist-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+
+    .check-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      font-size: 0.92rem;
+      transition: all var(--transition-fast);
+    }
+    .check-item.personalized-alert {
+      border-left: 4px solid #ef4444;
+      background: rgba(239, 68, 68, 0.05);
+    }
+    .check-item.personalized-alert .check-badge-alert {
+      display: inline-block;
+      background: #ef4444;
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 0.1rem 0.4rem;
+      border-radius: var(--radius-full);
+      margin-bottom: 0.25rem;
+      text-transform: uppercase;
+    }
+
+    .check-num {
+      width: 26px;
+      height: 26px;
+      border-radius: var(--radius-full);
+      background: var(--bg-elevated);
+      color: var(--accent-primary);
+      font-weight: 800;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    /* Action Buttons in Final Screen */
+    .final-actions-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+      margin-top: 2rem;
+    }
+
+    /* ==========================================================================
+       MODALS, NOTIFICATIONS & TOASTS
+       ========================================================================== */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .toast-msg {
+      background: var(--bg-secondary);
+      border: 1px solid var(--accent-primary);
+      color: var(--text-primary);
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--radius-full);
+      box-shadow: var(--shadow-xl);
+      font-size: 0.88rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      animation: fadeInToast 0.3s var(--transition-smooth);
+    }
+
+    @keyframes fadeInToast {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Floating XP Notification */
+    .floating-xp {
+      position: fixed;
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: #f59e0b;
+      text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+      pointer-events: none;
+      z-index: 100;
+      animation: floatUp 1.2s forwards;
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 0; transform: translateY(0) scale(0.7); }
+      30% { opacity: 1; transform: translateY(-20px) scale(1.15); }
+      100% { opacity: 0; transform: translateY(-60px) scale(1); }
+    }
+
+    /* Print Stylesheet for Safety Checklist */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+      }
+      .app-header, .status-ribbon, .nav-tabs, .final-actions-row, .header-actions {
+        display: none !important;
+      }
+      .final-score-card {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+      }
+      .checklist-grid {
+        grid-template-columns: 1fr 1fr !important;
+      }
+      .check-item {
+        border: 1px solid #ccc !important;
+        page-break-inside: avoid;
+      }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 640px) {
+      .header-inner {
+        flex-wrap: wrap;
+      }
+      .brand {
+        order: 1;
+      }
+      .header-actions {
+        order: 2;
+      }
+      .nav-tabs {
+        order: 3;
+        width: 100%;
+        justify-content: space-around;
+        margin-top: 0.4rem;
+      }
+      .decision-panel {
+        grid-template-columns: 1fr;
+      }
+      .triggers-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================================================
+       APP HEADER & CONTROLS
+       ========================================================================== -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon">
+          <!-- Shield Dojo SVG -->
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </div>
+        <span>PhishDojo</span>
+        <span class="brand-tag">v2.0</span>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-tabs" aria-label="Main Navigation">
+        <button class="nav-btn active" id="navTrainer" onclick="app.switchTab('trainer')">
+          <span>🥋</span>
+          <span data-i18n="nav_dojo">Dojo Training</span>
+        </button>
+        <button class="nav-btn" id="navDaily" onclick="app.switchTab('daily')">
+          <span>📅</span>
+          <span data-i18n="nav_daily">Scam of Day</span>
+        </button>
+        <button class="nav-btn" id="navFamily" onclick="app.switchTab('family')">
+          <span>👨‍👩‍👧</span>
+          <span data-i18n="nav_family">Family Mode</span>
+        </button>
+      </nav>
+
+      <!-- Utility Tools (Language, Audio, Theme, Accessibility) -->
+      <div class="header-actions">
+        <!-- Language Switcher -->
+        <button class="tool-btn" id="btnLangToggle" onclick="app.toggleLanguage()" title="Toggle English / Hindi">
+          <span id="langDisplay">🌐 हिन्दी</span>
+        </button>
+        <!-- Sound Toggle -->
+        <button class="tool-btn" id="btnAudioToggle" onclick="app.toggleAudio()" title="Sound Effects">
+          <span id="audioIcon">🔊</span>
+        </button>
+        <!-- Elderly Font Size Scaler -->
+        <button class="tool-btn" id="btnFontToggle" onclick="app.cycleFontSize()" title="Text Size (Elderly Friendly)">
+          <span id="fontScaleDisplay">A+</span>
+        </button>
+        <!-- Theme Switcher -->
+        <button class="tool-btn" id="btnThemeToggle" onclick="app.toggleTheme()" title="Dark / Light Mode">
+          <span id="themeIcon">🌙</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       MAIN VIEWPORT CONTAINER
+       ========================================================================== -->
+  <main class="app-main">
+    
+    <!-- Status Ribbon (XP, Streak, Level, Progress) -->
+    <section class="status-ribbon" id="statusRibbon">
+      <div class="stats-group">
+        <div class="stat-pill streak-badge" title="Consecutive Correct Answers">
+          <span class="icon">🔥</span>
+          <span id="statStreak">0</span>
+          <span data-i18n="streak_label">Streak</span>
+        </div>
+        <div class="stat-pill xp-badge" title="Total Dojo XP">
+          <span class="icon">⚡</span>
+          <span id="statXp">0</span>
+          <span>XP</span>
+        </div>
+        <div class="rank-badge" id="statBadgeTitle">White Belt</div>
+      </div>
+
+      <div class="stat-pill" style="color: var(--text-secondary); font-size: 0.85rem;">
+        <span data-i18n="scenario_counter">Scenario</span>: 
+        <strong id="scenarioProgressText" style="color: var(--text-primary); margin-left: 0.25rem;">1 / 10</strong>
+      </div>
+
+      <div class="progress-wrapper">
+        <div class="progress-track">
+          <div class="progress-fill" id="sessionProgressBar" style="width: 10%;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 1: DOJO TRAINING (GAME FLOW) -->
+    <section id="tabViewTrainer">
+      
+      <!-- Realistic Device Mockup Frame -->
+      <div class="mockup-container">
+        <div class="phone-frame" id="phoneFrame">
+          
+          <!-- Mockup Top Notch -->
+          <div class="phone-notch-bar">
+            <span>9:41</span>
+            <div class="notch-camera"></div>
+            <span>5G 📶 98%</span>
+          </div>
+
+          <!-- Medium-Specific Header (SMS / WhatsApp / Email / Job) -->
+          <div class="medium-header sms" id="mockupHeader">
+            <div class="sender-avatar" id="mockupAvatar">🏛️</div>
+            <div class="sender-info">
+              <div class="sender-name">
+                <span id="mockupSenderName">Example Bank Alert</span>
+                <span id="mockupVerifiedBadge" class="verified-icon" style="display:none;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="#10b981"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4" stroke="#fff" stroke-width="2.5" fill="none"/></svg>
+                </span>
+                <span id="mockupUnverifiedBadge" class="unverified-tag" style="display:none;">UNVERIFIED</span>
+              </div>
+              <div class="sender-handle" id="mockupSenderHandle">VM-EXBANK</div>
+            </div>
+          </div>
+
+          <!-- Phone Screen Canvas -->
+          <div class="phone-canvas" id="mockupCanvas">
+            
+            <!-- Security / Protocol Notice Banner -->
+            <div class="security-notice" id="securityNotice" style="display:none;">
+              <span>🔒 End-to-end encrypted message</span>
+            </div>
+
+            <!-- Email Subject Bar (Displayed only for email medium) -->
+            <div id="emailSubjectBar" style="display: none; margin-bottom: 0.75rem; padding: 0.5rem; background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-weight: 700; font-size: 0.95rem;">
+              <span style="color: var(--text-muted); font-size: 0.8rem; display: block;">SUBJECT:</span>
+              <span id="emailSubjectText">Urgent Action Required</span>
+            </div>
+
+            <!-- Interactive Message Content Bubble -->
+            <div class="message-bubble incoming-sms" id="messageBubble">
+              <div id="interactiveMessageBody">
+                <!-- Text with tappable spot-tokens injected dynamically -->
+              </div>
+              <div id="fakeCtaContainer" style="display: none;">
+                <!-- Simulated button or attachment -->
+                <div class="fake-cta-button" id="fakeCtaBtn">Action Required</div>
+              </div>
+              <span class="msg-timestamp" id="mockupTimestamp">Today, 11:42 AM</span>
+            </div>
+
+          </div>
+
+          <!-- Spotter Tool Instruction Hint Bar -->
+          <div class="spot-hint-bar">
+            <div>
+              <span>🔍 </span>
+              <span data-i18n="spot_hint">Tap suspect phrases to mark red flags</span>: 
+              <span class="spot-counter" id="flaggedCount">0 flagged</span>
+            </div>
+            <!-- Text-to-Speech (Elderly Voice Reader) -->
+            <button class="tts-speaker-btn" onclick="app.speakCurrentMessage()" title="Read aloud">
+              <span>🔊</span>
+              <span data-i18n="listen_btn">Listen</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Decision Buttons (SCAM vs SAFE) -->
+      <div class="decision-panel" id="decisionPanel">
+        <button class="decision-btn btn-scam" id="btnMarkScam" onclick="app.submitDecision(true)">
+          <span>🚨</span>
+          <span data-i18n="btn_scam">THIS IS A SCAM</span>
+        </button>
+        <button class="decision-btn btn-safe" id="btnMarkSafe" onclick="app.submitDecision(false)">
+          <span>✅</span>
+          <span data-i18n="btn_safe">THIS IS SAFE</span>
+        </button>
+      </div>
+
+      <!-- Explainer & Red Flag Breakdown (Revealed After Answering) -->
+      <div class="explainer-card" id="explainerCard" style="display: none;">
+        
+        <!-- Banner: Result Indicator -->
+        <div class="explainer-banner correct" id="explainerBanner">
+          <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <span id="resultIcon">🎉</span>
+            <span id="resultTitle">Spot on! That was a scam.</span>
+          </div>
+          <span id="resultXpGain" style="font-size: 1rem; color: #f59e0b;">+50 XP</span>
+        </div>
+
+        <div class="explainer-content">
+          
+          <!-- 4 Psychological Triggers Section -->
+          <div class="psych-triggers-section" id="triggersContainer">
+            <div class="section-mini-title" data-i18n="triggers_title">PSYCHOLOGICAL ATTACK VECTORS USED</div>
+            <div class="triggers-grid">
+              <div class="trigger-badge urgency" id="triggerUrgency">
+                <span>⚡</span>
+                <div>
+                  <div data-i18n="trigger_urgency">Urgency</div>
+                  <small style="font-size: 0.7em; font-weight: 500; display: block;" data-i18n="trigger_urgency_sub">Rush before thinking</small>
+                </div>
+              </div>
+              <div class="trigger-badge authority" id="triggerAuthority">
+                <span>🛡️</span>
+                <div>
+                  <div data-i18n="trigger_authority">Authority</div>
+                  <small style="font-size: 0.7em; font-weight: 500; display: block;" data-i18n="trigger_authority_sub">Fake banks/police</small>
+                </div>
+              </div>
+              <div class="trigger-badge fear" id="triggerFear">
+                <span>😨</span>
+                <div>
+                  <div data-i18n="trigger_fear">Fear / Threat</div>
+                  <small style="font-size: 0.7em; font-weight: 500; display: block;" data-i18n="trigger_fear_sub">Account block/jail</small>
+                </div>
+              </div>
+              <div class="trigger-badge reward" id="triggerReward">
+                <span>🎁</span>
+                <div>
+                  <div data-i18n="trigger_reward">Reward / Greed</div>
+                  <small style="font-size: 0.7em; font-weight: 500; display: block;" data-i18n="trigger_reward_sub">Free money/lottery</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Red Flags Identified List -->
+          <div id="redFlagsBox">
+            <div class="section-mini-title" data-i18n="red_flags_title">CRITICAL RED FLAGS IN THIS MESSAGE</div>
+            <div class="red-flags-list" id="redFlagsList">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Safe Message Explanation (Shown if scenario is SAFE) -->
+          <div id="safeReasonBox" style="display: none;">
+            <div class="section-mini-title" data-i18n="why_safe_title">WHY THIS MESSAGE IS GENUINE</div>
+            <div class="safe-explanation-box" id="safeExplanationText">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Clear Takeaway Tip Box -->
+          <div class="takeaway-box">
+            <div class="takeaway-icon">💡</div>
+            <div class="takeaway-text">
+              <span class="takeaway-label" data-i18n="takeaway_label">CYBER DOJO GOLDEN RULE</span>
+              <span id="takeawayTipText">Never click links inside SMS messages. Open your official bank app directly.</span>
+            </div>
+          </div>
+
+          <!-- Next Scenario Button -->
+          <button class="continue-btn" id="btnNextScenario" onclick="app.nextScenario()">
+            <span data-i18n="btn_continue">Continue to Next Challenge</span>
+            <span>➔</span>
+          </button>
+
+        </div>
+      </div>
+
+    </section>
+
+    <!-- TAB 2: SCAM OF THE DAY -->
+    <section id="tabViewDaily" style="display: none;">
+      <div class="daily-scam-card">
+        <div class="daily-badge-header">
+          <span class="daily-tag" data-i18n="daily_tag">TODAY'S SCAM RADAR</span>
+          <span style="font-size: 0.85rem; color: var(--text-muted);" id="dailyDate">28 October 2026</span>
+        </div>
+        
+        <h2 class="daily-title" id="dailyTitle">The "Digital Arrest" Police Impersonation Scam</h2>
+        
+        <p class="daily-story" id="dailyStory">
+          Scammers pose as Cyber Crime Police or Customs officials over video calls, claiming illegal items were found under your identification number. They manipulate victims into staying on video for hours ("digital arrest") and transferring money for "verification".
+        </p>
+
+        <div class="breakdown-box">
+          <div class="section-mini-title" style="margin-bottom: 0.75rem;" data-i18n="daily_mod_title">HOW SCAMMERS TRICK YOU</div>
+          
+          <div class="breakdown-item">
+            <div class="breakdown-num">1</div>
+            <div>
+              <strong id="dailyStep1Title">Panic Phone Call</strong>
+              <p style="font-size: 0.88rem; color: var(--text-secondary);" id="dailyStep1Desc">Caller claims your identity was used in international money laundering.</p>
+            </div>
+          </div>
+          
+          <div class="breakdown-item">
+            <div class="breakdown-num">2</div>
+            <div>
+              <strong id="dailyStep2Title">Fake Uniform & Police Backdrop</strong>
+              <p style="font-size: 0.88rem; color: var(--text-secondary);" id="dailyStep2Desc">They demand you switch to a Skype/WhatsApp video call with a spoofed government seal.</p>
+            </div>
+          </div>
+          
+          <div class="breakdown-item">
+            <div class="breakdown-num">3</div>
+            <div>
+              <strong id="dailyStep3Title">Demands Security Deposit</strong>
+              <p style="font-size: 0.88rem; color: var(--text-secondary);" id="dailyStep3Desc">They insist you wire funds to a "Supreme Court Escrow Account" for forensic clearing.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-box" style="margin-bottom: 1.25rem;">
+          <div class="takeaway-icon">🛡️</div>
+          <div class="takeaway-text">
+            <span class="takeaway-label" data-i18n="defense_rule_label">DEFENSE RULE</span>
+            <span id="dailyDefenseRule">There is NO legal provision for "Digital Arrest". Real police and courts never conduct arrests or interrogations over WhatsApp/Skype or demand money transfers.</span>
+          </div>
+        </div>
+
+        <button class="continue-btn" style="width: 100%;" onclick="app.claimDailyDojo()">
+          <span data-i18n="claim_daily_btn">Practice This Scenario & Earn +50 XP</span>
+          <span>⚡</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- TAB 3: FAMILY MODE -->
+    <section id="tabViewFamily" style="display: none;">
+      <div class="family-mode-card">
+        
+        <div class="family-hero">
+          <div class="family-hero-icon">👨‍👩‍👧‍👦</div>
+          <h2 data-i18n="family_title">Family Protection Mode</h2>
+          <p data-i18n="family_desc">Create an elder-friendly 5-scenario quiz for your parents or grandparents. It launches with large fonts, voice reading, and simplified tips.</p>
+        </div>
+
+        <div class="section-mini-title" style="margin-bottom: 0.75rem;" data-i18n="choose_pack_title">CHOOSE A TRAINING PACK FOR YOUR FAMILY</div>
+        
+        <div class="preset-selector-grid">
+          
+          <div class="preset-card selected" id="packElders" onclick="app.selectFamilyPack('elders')">
+            <div class="preset-title">
+              <span>👵</span>
+              <span data-i18n="pack_elders_title">Elderly Shield Pack</span>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);" data-i18n="pack_elders_desc">Focuses on Phone Emergencies, Fake Electricity Cuts, Bank Block SMS, and Courier Links.</p>
+            <span style="font-size: 0.75rem; color: var(--accent-primary); font-weight: 700; margin-top: auto;">5 Scenarios (Handpicked)</span>
+          </div>
+
+          <div class="preset-card" id="packPayments" onclick="app.selectFamilyPack('payments')">
+            <div class="preset-title">
+              <span>💳</span>
+              <span data-i18n="pack_payments_title">UPI & Payment Traps</span>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);" data-i18n="pack_payments_desc">Focuses on QR code scanning traps, fake refund payments, and lottery cash prizes.</p>
+            <span style="font-size: 0.75rem; color: var(--accent-primary); font-weight: 700; margin-top: auto;">5 Scenarios (Payment Focus)</span>
+          </div>
+
+          <div class="preset-card" id="packYouth" onclick="app.selectFamilyPack('youth')">
+            <div class="preset-title">
+              <span>💼</span>
+              <span data-i18n="pack_youth_title">Job & Crypto Scams</span>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);" data-i18n="pack_youth_desc">Focuses on YouTube like-and-earn tasks, Telegram crypto bots, and fake airline hiring.</p>
+            <span style="font-size: 0.75rem; color: var(--accent-primary); font-weight: 700; margin-top: auto;">5 Scenarios (Career Focus)</span>
+          </div>
+
+        </div>
+
+        <!-- Generated Link & Code Box -->
+        <div class="share-result-box">
+          <div>
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.4rem;" data-i18n="share_link_label">SHAREABLE FAMILY QUIZ LINK</label>
+            <div class="share-link-row">
+              <input type="text" class="share-input" id="familyShareUrl" readonly value="https://phishdojo.local/#family=elders">
+              <button class="tool-btn" onclick="app.copyFamilyLink()" style="background: var(--accent-primary); color: white;" data-i18n="copy_btn">Copy</button>
+            </div>
+          </div>
+
+          <div class="code-display-box">
+            <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;" data-i18n="family_code_label">OR ENTER 6-DIGIT FAMILY CODE</span>
+            <div class="code-display-num" id="familyCodeDisplay">DOJO-82</div>
+          </div>
+
+          <button class="continue-btn" onclick="app.shareViaWhatsApp()" style="background: #25d366; color: white;">
+            <span>💬</span>
+            <span data-i18n="share_whatsapp_btn">Share to Parents on WhatsApp</span>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 4: FINAL RESULTS & SAFETY SCORE SCREEN -->
+    <section id="tabViewResults" style="display: none;">
+      <div class="final-score-card">
+        
+        <h2 style="font-size: 1.8rem; font-weight: 900; margin-bottom: 0.5rem;" data-i18n="report_title">Personal Safety Evaluation</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;" data-i18n="report_subtitle">Here is your adaptive cyber defense breakdown and customized protection plan.</p>
+
+        <!-- Circle Gauge Score -->
+        <div class="score-circle-container">
+          <svg width="170" height="170" viewBox="0 0 170 170">
+            <circle cx="85" cy="85" r="70" stroke="var(--bg-elevated)" stroke-width="14" fill="none"/>
+            <circle id="scoreRingCircle" cx="85" cy="85" r="70" stroke="var(--accent-primary)" stroke-width="14" fill="none"
+                    stroke-dasharray="440" stroke-dashoffset="110" stroke-linecap="round"
+                    style="transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 1.5s var(--transition-smooth);"/>
+          </svg>
+          <div class="score-number">
+            <div class="score-value" id="finalScoreVal">85</div>
+            <div class="score-max">/ 100</div>
+          </div>
+        </div>
+
+        <div class="score-grade" id="finalGradeTitle" style="color: var(--accent-primary);">Grade A: Cyber Guardian</div>
+        <p id="finalFeedbackSummary" style="font-size: 0.95rem; color: var(--text-secondary); max-width: 480px; margin: 0 auto;">
+          You showed sharp intuition against fake delivery links and urgency manipulation!
+        </p>
+
+        <!-- Badges Earned Shelf -->
+        <div class="badges-shelf" id="badgesShelf">
+          <!-- Dynamically populated badges -->
+        </div>
+
+        <!-- Weakness Breakdown Chart (5 Dimensions) -->
+        <div class="chart-container-box">
+          <div class="chart-title">
+            <span data-i18n="chart_title">Psychological Vector Resistance</span>
+            <span style="font-size: 0.75rem; color: var(--accent-primary);" data-i18n="chart_sub">Higher is safer</span>
+          </div>
+
+          <div class="chart-bar-item">
+            <div class="chart-bar-label">
+              <span>⚡ Urgency Resistance</span>
+              <span id="chartValUrgency">80%</span>
+            </div>
+            <div class="chart-bar-track">
+              <div class="chart-bar-progress" id="barUrgency" style="width: 80%; background: var(--urgency-color);"></div>
+            </div>
+          </div>
+
+          <div class="chart-bar-item">
+            <div class="chart-bar-label">
+              <span>🛡️ Authority Skepticism</span>
+              <span id="chartValAuthority">90%</span>
+            </div>
+            <div class="chart-bar-track">
+              <div class="chart-bar-progress" id="barAuthority" style="width: 90%; background: var(--authority-color);"></div>
+            </div>
+          </div>
+
+          <div class="chart-bar-item">
+            <div class="chart-bar-label">
+              <span>😨 Fear / Pressure Resilience</span>
+              <span id="chartValFear">75%</span>
+            </div>
+            <div class="chart-bar-track">
+              <div class="chart-bar-progress" id="barFear" style="width: 75%; background: var(--fear-color);"></div>
+            </div>
+          </div>
+
+          <div class="chart-bar-item">
+            <div class="chart-bar-label">
+              <span>🎁 Reward / Greed Filter</span>
+              <span id="chartValReward">85%</span>
+            </div>
+            <div class="chart-bar-track">
+              <div class="chart-bar-progress" id="barReward" style="width: 85%; background: var(--reward-color);"></div>
+            </div>
+          </div>
+
+          <div class="chart-bar-item">
+            <div class="chart-bar-label">
+              <span>🟢 Safe Message Discernment</span>
+              <span id="chartValSafe">100%</span>
+            </div>
+            <div class="chart-bar-track">
+              <div class="chart-bar-progress" id="barSafe" style="width: 100%; background: var(--safe-color);"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Personalized 8-Point Privacy & Safety Checklist -->
+        <div class="checklist-container">
+          <div class="checklist-header">
+            <div>
+              <h3 style="font-weight: 800; font-size: 1.25rem;" data-i18n="checklist_title">Personalized 8-Point Safety Checklist</h3>
+              <p style="font-size: 0.85rem; color: var(--text-secondary);" data-i18n="checklist_sub">Rules tailored to the specific traps you encountered.</p>
+            </div>
+            <button class="tool-btn" onclick="window.print()" title="Print Checklist for Fridge">
+              <span>🖨️</span>
+              <span data-i18n="print_btn">Print for Fridge</span>
+            </button>
+          </div>
+
+          <div class="checklist-grid" id="checklistGrid">
+            <!-- Dynamically populated 8 rules with warning badges for user's specific mistakes -->
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="final-actions-row">
+          <button class="continue-btn" onclick="app.restartTraining()" style="background: var(--accent-primary);">
+            <span>🔄</span>
+            <span data-i18n="btn_play_again">Practice Weak Areas</span>
+          </button>
+          <button class="continue-btn" onclick="app.switchTab('family')" style="background: var(--bg-elevated); color: var(--text-primary); border: 1px solid var(--border-color);">
+            <span>👨‍👩‍👧</span>
+            <span data-i18n="btn_send_parents">Send Quiz to Parents</span>
+          </button>
+          <button class="continue-btn" onclick="app.copySafetyChecklist()" style="background: #10b981; color: white;">
+            <span>📋</span>
+            <span data-i18n="btn_copy_tips">Copy Checklist</span>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Toast Notification Mount -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ==========================================================================
+       VANILLA JAVASCRIPT APPLICATION CODE
+       ========================================================================== -->
+  <script>
+    /**
+     * PhishDojo: Adaptive Scam Awareness Trainer
+     * Self-contained, zero-dependency educational web app.
+     */
+
+    // --------------------------------------------------------------------------
+    // 1. IN-MEMORY SAFE STORAGE HELPER (Handles file:// protocol & private mode)
+    // --------------------------------------------------------------------------
+    const SafeStorage = {
+      memory: {},
+      isSupported: (function() {
+        try {
+          const testKey = '__phishdojo_test__';
+          window.localStorage.setItem(testKey, testKey);
+          window.localStorage.removeItem(testKey);
+          return true;
+        } catch (e) {
+          return false;
+        }
+      })(),
+      getItem(key) {
+        if (this.isSupported) {
+          try {
+            return window.localStorage.getItem(key);
+          } catch (e) {}
+        }
+        return this.memory[key] || null;
+      },
+      setItem(key, value) {
+        if (this.isSupported) {
+          try {
+            window.localStorage.setItem(key, value);
+            return;
+          } catch (e) {}
+        }
+        this.memory[key] = String(value);
+      }
+    };
+
+    // --------------------------------------------------------------------------
+    // 2. SYNTHESIZER AUDIO ENGINE (Native Web Audio API - Zero External Audio)
+    // --------------------------------------------------------------------------
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+      init() {
+        if (!this.ctx && (window.AudioContext || window.webkitAudioContext)) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioCtx();
+        }
+      }
+      playChime() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc1 = this.ctx.createOscillator();
+          const osc2 = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc1.type = 'sine';
+          osc2.type = 'triangle';
+          osc1.frequency.setValueAtTime(523.25, now); // C5
+          osc1.frequency.exponentialRampToValueAtTime(659.25, now + 0.12); // E5
+          osc1.frequency.exponentialRampToValueAtTime(783.99, now + 0.24); // G5
+
+          osc2.frequency.setValueAtTime(261.63, now);
+          osc2.frequency.exponentialRampToValueAtTime(392.00, now + 0.2);
+
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+          osc1.connect(gain);
+          osc2.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + 0.45);
+          osc2.stop(now + 0.45);
+        } catch (e) {}
+      }
+      playBuzz() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(160, now);
+          osc.frequency.linearRampToValueAtTime(110, now + 0.3);
+
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.32);
+        } catch (e) {}
+      }
+      playTap() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(800, now);
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.04);
+        } catch (e) {}
+      }
+      playFanfare() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const notes = [440, 554.37, 659.25, 880];
+          notes.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const startTime = this.ctx.currentTime + (idx * 0.1);
+            osc.frequency.setValueAtTime(freq, startTime);
+            gain.gain.setValueAtTime(0.16, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.28);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(startTime);
+            osc.stop(startTime + 0.28);
+          });
+        } catch (e) {}
+      }
+    }
+
+    // --------------------------------------------------------------------------
+    // 3. I18N DICTIONARY (FULL ENGLISH & HINDI SUPPORT)
+    // --------------------------------------------------------------------------
+    const I18N = {
+      en: {
+        nav_dojo: "Dojo Training",
+        nav_daily: "Scam of Day",
+        nav_family: "Family Mode",
+        streak_label: "Streak",
+        scenario_counter: "Scenario",
+        spot_hint: "Tap suspect phrases to mark red flags",
+        listen_btn: "Listen",
+        btn_scam: "THIS IS A SCAM",
+        btn_safe: "THIS IS SAFE",
+        triggers_title: "PSYCHOLOGICAL ATTACK VECTORS USED",
+        trigger_urgency: "Urgency",
+        trigger_urgency_sub: "Rush before thinking",
+        trigger_authority: "Authority",
+        trigger_authority_sub: "Fake banks/police",
+        trigger_fear: "Fear / Threat",
+        trigger_fear_sub: "Account block/jail",
+        trigger_reward: "Reward / Greed",
+        trigger_reward_sub: "Free money/lottery",
+        red_flags_title: "CRITICAL RED FLAGS IN THIS MESSAGE",
+        why_safe_title: "WHY THIS MESSAGE IS GENUINE",
+        takeaway_label: "CYBER DOJO GOLDEN RULE",
+        btn_continue: "Continue to Next Challenge",
+        daily_tag: "TODAY'S SCAM RADAR",
+        daily_mod_title: "HOW SCAMMERS TRICK YOU",
+        defense_rule_label: "DEFENSE RULE",
+        claim_daily_btn: "Practice This Scenario & Earn +50 XP",
+        family_title: "Family Protection Mode",
+        family_desc: "Create an elder-friendly 5-scenario quiz for your parents or grandparents. It launches with large fonts, voice reading, and simplified tips.",
+        choose_pack_title: "CHOOSE A TRAINING PACK FOR YOUR FAMILY",
+        pack_elders_title: "Elderly Shield Pack",
+        pack_elders_desc: "Focuses on Phone Emergencies, Fake Electricity Cuts, Bank Block SMS, and Courier Links.",
+        pack_payments_title: "UPI & Payment Traps",
+        pack_payments_desc: "Focuses on QR code scanning traps, fake refund payments, and lottery cash prizes.",
+        pack_youth_title: "Job & Crypto Scams",
+        pack_youth_desc: "Focuses on YouTube like-and-earn tasks, Telegram crypto bots, and fake airline hiring.",
+        share_link_label: "SHAREABLE FAMILY QUIZ LINK",
+        family_code_label: "OR ENTER 6-DIGIT FAMILY CODE",
+        copy_btn: "Copy",
+        share_whatsapp_btn: "Share to Parents on WhatsApp",
+        report_title: "Personal Safety Evaluation",
+        report_subtitle: "Here is your adaptive cyber defense breakdown and customized protection plan.",
+        chart_title: "Psychological Vector Resistance",
+        chart_sub: "Higher is safer",
+        checklist_title: "Personalized 8-Point Safety Checklist",
+        checklist_sub: "Rules tailored to the specific traps you encountered.",
+        print_btn: "Print for Fridge",
+        btn_play_again: "Practice Weak Areas",
+        btn_send_parents: "Send Quiz to Parents",
+        btn_copy_tips: "Copy Checklist",
+        correct_scam: "Spot on! That was a dangerous scam.",
+        correct_safe: "Great judgment! This message is safe and authentic.",
+        wrong_fell_for_scam: "Watch out! You just fell for a scam.",
+        wrong_false_alarm: "False Alarm! This message was actually safe and legitimate.",
+        badge_white: "White Belt (Beginner)",
+        badge_spotter: "Scam Spotter",
+        badge_guardian: "Cyber Guardian",
+        badge_sensei: "Phish Sensei",
+        badge_family: "Family Protector",
+        toast_copied: "Link copied to clipboard!",
+        toast_checklist_copied: "Safety Checklist copied to clipboard!"
+      },
+      hi: {
+        nav_dojo: "डोजो ट्रेनिंग",
+        nav_daily: "आज का स्कैम",
+        nav_family: "फैमिली मोड",
+        streak_label: "लगातार सही",
+        scenario_counter: "परिदृश्य",
+        spot_hint: "शक वाले शब्दों पर टैप करके लाल झंडी (Red Flag) लगाएं",
+        listen_btn: "सुनें",
+        btn_scam: "यह एक स्कैम (धोखा) है",
+        btn_safe: "यह सुरक्षित है",
+        triggers_title: "इस्तेमाल किए गए मनोवैज्ञानिक हथियार",
+        trigger_urgency: "जल्दबाजी (Urgency)",
+        trigger_urgency_sub: "सोचने का मौका न देना",
+        trigger_authority: "अधिकार (Authority)",
+        trigger_authority_sub: "बैंक या पुलिस का ढोंग",
+        trigger_fear: "डर / धमकी (Fear)",
+        trigger_fear_sub: "खाता बंद या जेल का भय",
+        trigger_reward: "लालच (Reward)",
+        trigger_reward_sub: "मुफ्त पैसा या लॉटरी",
+        red_flags_title: "इस संदेश में छिपे बड़े खतरे (Red Flags)",
+        why_safe_title: "यह संदेश सुरक्षित और असली क्यों है",
+        takeaway_label: "साइबर डोजो का पक्का नियम",
+        btn_continue: "अगली चुनौती पर आगे बढ़ें",
+        daily_tag: "आज का दैनिक स्कैम रडार",
+        daily_mod_title: "स्कैमर्स आपको कैसे फंसाते हैं",
+        defense_rule_label: "बचाव का नियम",
+        claim_daily_btn: "यह अभ्यास करें और +50 XP कमाएं",
+        family_title: "फैमिली प्रोटेक्शन मोड",
+        family_desc: "माता-पिता या वरिष्ठ नागरिकों के लिए 5-सवालों का सरल क्विज़ बनाएं। यह बड़े अक्षरों, बोलकर सुनाने वाले ऑडियो और आसान सुझावों के साथ चलता है।",
+        choose_pack_title: "अपने परिवार के लिए ट्रेनिंग पैक चुनें",
+        pack_elders_title: "बुजुर्ग सुरक्षा पैक",
+        pack_elders_desc: "फोन टूटने की झूठी इमरजेंसी, बिजली कटने की धमकी, बैंक ब्लॉक SMS और कूरियर लिंक पर आधारित।",
+        pack_payments_title: "UPI और पेमेंट जाल",
+        pack_payments_desc: "QR कोड स्कैनिंग, गलत रिफंड का नाटक और लॉटरी पुरस्कारों पर केंद्रित।",
+        pack_youth_title: "नौकरी और क्रिप्टो स्कैम",
+        pack_youth_desc: "YouTube वीडियो लाइक करने वाली नौकरी, टेलीग्राम क्रिप्टो बॉट और फर्जी जॉब ऑफर पर केंद्रित।",
+        share_link_label: "शेयर करने योग्य फैमिली क्विज़ लिंक",
+        family_code_label: "या 6-अंकों का फैमिली कोड दर्ज करें",
+        copy_btn: "कॉपी करें",
+        share_whatsapp_btn: "व्हाट्सएप पर माता-पिता को भेजें",
+        report_title: "व्यक्तिगत डिजिटल सुरक्षा रिपोर्ट",
+        report_subtitle: "यहां आपकी साइबर सुरक्षा का मूल्यांकन और बचाव की योजना दी गई है।",
+        chart_title: "मनोवैज्ञानिक हमलों से बचाव क्षमता",
+        chart_sub: "जितना ऊंचा स्कोर, उतना सुरक्षित",
+        checklist_title: "8-सूत्रीय व्यक्तिगत सुरक्षा चेकलिस्ट",
+        checklist_sub: "यह नियम आपकी गलतियों और कमजोरियों के आधार पर तैयार किए गए हैं।",
+        print_btn: "फ्रिज पर लगाने हेतु प्रिंट करें",
+        btn_play_again: "कमजोर विषयों का अभ्यास करें",
+        btn_send_parents: "माता-पिता को क्विज़ भेजें",
+        btn_copy_tips: "चेकलिस्ट कॉपी करें",
+        correct_scam: "बिल्कुल सही! यह एक खतरनाक फर्जीवाड़ा (स्कैम) था।",
+        correct_safe: "शानदार समझ! यह संदेश पूरी तरह असली और सुरक्षित है।",
+        wrong_fell_for_scam: "सावधान! आप धोखेबाजों के झांसे में आ गए।",
+        wrong_false_alarm: "गलत अलार्म! यह संदेश वास्तव में सुरक्षित और असली था।",
+        badge_white: "व्हाइट बेल्ट (शुरुआती)",
+        badge_spotter: "स्कैम स्पॉटर (पहचानकर्ता)",
+        badge_guardian: "साइबर रक्षक (Guardian)",
+        badge_sensei: "फिश सेंसेई (Sensei)",
+        badge_family: "फैमिली रक्षक",
+        toast_copied: "लिंक कॉपी हो गया!",
+        toast_checklist_copied: "सुरक्षा चेकलिस्ट कॉपी हो गई!"
+      }
+    };
+
+    // --------------------------------------------------------------------------
+    // 4. SCENARIO BANK (22 COMPREHENSIVE FICTIONAL SCENARIOS)
+    // Fictional names, domains (.test), unverified handles, and safe controls.
+    // --------------------------------------------------------------------------
+    const SCENARIOS = [
+      // 1. Fake KYC / Bank Freeze (SMS)
+      {
+        id: "scam_kyc_freeze",
+        medium: "sms",
+        isScam: true,
+        difficulty: 1,
+        category: "kyc",
+        triggers: ["urgency", "fear", "authority"],
+        sender: {
+          name: "Example Bank Alert",
+          handle: "VM-EXBANK",
+          avatar: "🏛️",
+          verified: false
+        },
+        content: {
+          en: "Dear Customer, your Example Bank account #XXXX1234 will be BLOCKED within 2 hours due to unverified KYC. Immediately update PAN and Aadhaar at: http://examp1e-bank-verify.test/login to avoid suspension.",
+          hi: "प्रिय ग्राहक, आपका Example Bank खाता #XXXX1234 असत्यापित KYC के कारण 2 घंटे में बंद कर दिया जाएगा। खाता चालू रखने हेतु तुरंत पैन और आधार यहां अपडेट करें: http://examp1e-bank-verify.test/login"
+        },
+        tokens: [
+          { textEn: "BLOCKED within 2 hours", textHi: "2 घंटे में बंद कर दिया जाएगा", isFlag: true, reasonEn: "Artificial urgency pressure to trigger panic.", reasonHi: "जल्दबाजी में गलत कदम उठाने के लिए कृत्रिम समय सीमा।" },
+          { textEn: "http://examp1e-bank-verify.test/login", textHi: "http://examp1e-bank-verify.test/login", isFlag: true, reasonEn: "Fictional phishing link using misspelled domain 'examp1e'.", reasonHi: "फर्जी डोमेन जो बैंक जैसी दिखती है पर पासवर्ड चुराती है।" },
+          { textEn: "unverified KYC", textHi: "असत्यापित KYC", isFlag: true, reasonEn: "Banks never demand KYC updates via SMS web links.", reasonHi: "बैंक कभी भी SMS लिंक भेजकर KYC अपडेट करने को नहीं कहते।" }
+        ],
+        takeaway: {
+          en: "Banks never threaten account deactivation within hours via SMS links. Always visit your branch or official banking app directly.",
+          hi: "बैंक कभी भी SMS में लिंक भेजकर कुछ ही घंटों में खाता बंद करने की धमकी नहीं देते। हमेशा बैंक की आधिकारिक ऐप का प्रयोग करें।"
+        }
+      },
+
+      // 2. Courier Delivery Failure Fee (SMS)
+      {
+        id: "scam_courier_fee",
+        medium: "sms",
+        isScam: true,
+        difficulty: 1,
+        category: "courier",
+        triggers: ["urgency", "fear"],
+        sender: {
+          name: "QuickCourier Delivery",
+          handle: "+91-98200-XXXXX",
+          avatar: "📦",
+          verified: false
+        },
+        content: {
+          en: "QuickCourier Alert: Your parcel #QC-9841 cannot be delivered due to incomplete street address. Pay a redelivery processing fee of $1.50 within 24 hours at https://quickcourier-redeliver.test or parcel will be returned to sender.",
+          hi: "QuickCourier सूचना: आपका पार्सल #QC-9841 अधूरा पता होने के कारण डिलीवर नहीं हो सका। पार्सल वापस जाने से रोकने के लिए 24 घंटे में ₹50 का री-डिलीवरी शुल्क यहां भरें: https://quickcourier-redeliver.test"
+        },
+        tokens: [
+          { textEn: "+91-98200-XXXXX", textHi: "+91-98200-XXXXX", isFlag: true, reasonEn: "Sent from an ordinary mobile phone number instead of official courier shortcode.", reasonHi: "आधिकारिक कंपनी कोड के बजाय सामान्य अज्ञात मोबाइल नंबर से भेजा गया।" },
+          { textEn: "https://quickcourier-redeliver.test", textHi: "https://quickcourier-redeliver.test", isFlag: true, reasonEn: "Phishing link designed to capture your credit/debit card details.", reasonHi: "कार्ड और बैंक जानकारी चुराने के लिए बनाया गया फर्जी लिंक।" },
+          { textEn: "fee of $1.50 within 24 hours", textHi: "24 घंटे में ₹50 का री-डिलीवरी शुल्क", isFlag: true, reasonEn: "Scammers use tiny nominal fees to trick users into typing OTP and card numbers.", reasonHi: "छोटी रकम का झांसा देकर पूरा बैंक खाता खाली करने की चाल।" }
+        ],
+        takeaway: {
+          en: "Couriers only verify addresses via their official portal or phone call—never pay online 'redelivery fees' from unknown SMS links.",
+          hi: "कूरियर कंपनियां केवल ऐप में पता जांचती हैं—SMS के अज्ञात लिंक पर कभी भी ₹50 या ₹100 की फीस न भरें।"
+        }
+      },
+
+      // 3. Family Emergency WhatsApp ("Mom I lost my phone")
+      {
+        id: "scam_family_emergency",
+        medium: "whatsapp",
+        isScam: true,
+        difficulty: 2,
+        category: "family",
+        triggers: ["urgency", "fear"],
+        sender: {
+          name: "Unknown Contact (+91 98711-00000)",
+          handle: "Status: Hey there! I am using WhatsApp",
+          avatar: "👤",
+          verified: false
+        },
+        content: {
+          en: "Hi Mom/Dad, my phone fell into water and broke completely. I am writing from a friend's phone right now. I urgently need to pay my hostel rent of $400 before 5 PM today or the landlord will lock me out. Please transfer to my friend's account #9876543210 (IFSC: FAKE000123) right now. Don't call this number as the mic is broken.",
+          hi: "मम्मी/पापा, मेरा फोन पानी में गिरकर टूट गया है। मैं दोस्त के फोन से मैसेज कर रहा हूँ। मुझे आज शाम 5 बजे से पहले हॉस्टल का किराया देना है नहीं तो मकान मालिक बाहर निकाल देगा। कृपया तुरंत मेरे दोस्त के खाते #9876543210 (IFSC: FAKE000123) पर पैसे भेज दें। इस नंबर पर कॉल मत करना, इसका माइक खराब है।"
+        },
+        tokens: [
+          { textEn: "Don't call this number as the mic is broken", textHi: "इस नंबर पर कॉल मत करना, इसका माइक खराब है", isFlag: true, reasonEn: "Classic scam tactic to prevent you from hearing that the voice isn't your child.", reasonHi: "आवाज की पहचान न हो सके, इसलिए धोखेबाज कॉल करने से मना करते हैं।" },
+          { textEn: "transfer to my friend's account", textHi: "मेरे दोस्त के खाते पर पैसे भेज दें", isFlag: true, reasonEn: "Directing funds into an untraceable third-party mule bank account.", reasonHi: "किसी अज्ञात तीसरे व्यक्ति के खाते में पैसा ट्रांसफर करवाने की साजिश।" },
+          { textEn: "before 5 PM today or the landlord will lock me out", textHi: "शाम 5 बजे से पहले हॉस्टल का किराया देना है", isFlag: true, reasonEn: "Exploiting parental anxiety with an urgent artificial crisis.", reasonHi: "माता-पिता के भावनात्मक लगाव और चिंता का फायदा उठाना।" }
+        ],
+        takeaway: {
+          en: "Always independently call your child or family member on their old known phone number or contact their friends directly before transferring any money.",
+          hi: "पैसे भेजने से पहले हमेशा अपने बच्चे के पुराने ज्ञात नंबर पर कॉल करें या उनके किसी करीबी दोस्त से पुष्टि करें।"
+        }
+      },
+
+      // 4. UPI Accidental Transfer / Refund Trap (WhatsApp)
+      {
+        id: "scam_upi_refund",
+        medium: "whatsapp",
+        isScam: true,
+        difficulty: 2,
+        category: "payment",
+        triggers: ["urgency", "reward", "fear"],
+        sender: {
+          name: "Ramesh Sharma (+91 97110-XXXXX)",
+          handle: "Business Account",
+          avatar: "👨",
+          verified: false
+        },
+        content: {
+          en: "Hello Sir, I accidentally transferred $350 (₹25,000) to your UPI number by mistake instead of my sister's hospital bill! Please be kind and send it back immediately by clicking this payment request or entering your UPI PIN: upi://pay?ref=fictional-trap.test. God bless you.",
+          hi: "नमस्ते सर, मैंने गलती से अपनी बहन के अस्पताल बिल की जगह आपके UPI नंबर पर ₹25,000 ट्रांसफर कर दिए हैं! कृपया इंसानियत दिखाते हुए इस लिंक पर क्लिक करके या अपना UPI पिन दर्ज करके पैसा तुरंत वापस भेजें: upi://pay?ref=fictional-trap.test. ईश्वर आपका भला करेगा।"
+        },
+        tokens: [
+          { textEn: "entering your UPI PIN", textHi: "अपना UPI पिन दर्ज करके", isFlag: true, reasonEn: "YOU NEVER ENTER A UPI PIN TO RECEIVE MONEY. Entering a PIN ALWAYS sends money.", reasonHi: "पैसे प्राप्त करने के लिए कभी UPI पिन नहीं डालना पड़ता। पिन डालने से हमेशा पैसे कटते हैं!" },
+          { textEn: "sister's hospital bill", textHi: "बहन के अस्पताल बिल", isFlag: true, reasonEn: "Emotional manipulation to make you act quickly without checking your bank statement.", reasonHi: "भावुक कहानी ताकि आप अपना बैंक बैलेंस चेक किए बिना हड़बड़ा जाएं।" },
+          { textEn: "upi://pay?ref=fictional-trap.test", textHi: "upi://pay?ref=fictional-trap.test", isFlag: true, reasonEn: "Malicious collect request link that drains your balance.", reasonHi: "धोखाधड़ी वाला पेमेंट कलेक्ट रिक्वेस्ट।" }
+        ],
+        takeaway: {
+          en: "Golden UPI Rule: You NEVER need to enter your UPI PIN or scan a QR code to RECEIVE money. Entering a PIN only sends money out.",
+          hi: "गोल्डन UPI नियम: पैसा प्राप्त करने के लिए कभी भी UPI पिन डालने या QR कोड स्कैन करने की आवश्यकता नहीं होती।"
+        }
+      },
+
+      // 5. Electricity Power Disconnection Notice (SMS)
+      {
+        id: "scam_electricity_shutoff",
+        medium: "sms",
+        isScam: true,
+        difficulty: 1,
+        category: "utility",
+        triggers: ["urgency", "fear", "authority"],
+        sender: {
+          name: "Electricity Board",
+          handle: "+91-99887-XXXXX",
+          avatar: "⚡",
+          verified: false
+        },
+        content: {
+          en: "URGENT NOTICE: Your electricity power supply will be disconnected tonight at 9:30 PM from the main grid because your last month bill was not updated. Immediately contact Electricity Officer Mr. Verma at 98765-XXXXX or pay via personal UPI to avoid power cut.",
+          hi: "अति आवश्यक सूचना: आज रात 9:30 बजे आपके घर की बिजली मुख्य ग्रिड से काट दी जाएगी क्योंकि पिछले महीने का बिल अपडेट नहीं हुआ है। बिजली कटने से बचने हेतु तुरंत बिजली अधिकारी श्री वर्मा से 98765-XXXXX पर संपर्क करें या व्यक्तिगत UPI से भुगतान करें।"
+        },
+        tokens: [
+          { textEn: "disconnected tonight at 9:30 PM", textHi: "आज रात 9:30 बजे आपके घर की बिजली मुख्य ग्रिड से काट दी जाएगी", isFlag: true, reasonEn: "Unrealistic overnight disconnection threat designed to induce panic in the evening.", reasonHi: "शाम के समय घबराहट पैदा करने के लिए रात 9:30 बजे बिजली काटने की फर्जी धमकी।" },
+          { textEn: "Electricity Officer Mr. Verma at 98765-XXXXX", textHi: "बिजली अधिकारी श्री वर्मा से 98765-XXXXX पर संपर्क करें", isFlag: true, reasonEn: "Government utilities never assign personal mobile numbers for bill settlements.", reasonHi: "सरकारी या बिजली बोर्ड कभी भी बिल भुगतान के लिए व्यक्तिगत मोबाइल नंबर नहीं देते।" },
+          { textEn: "pay via personal UPI", textHi: "व्यक्तिगत UPI से भुगतान करें", isFlag: true, reasonEn: "Legitimate utility bills are paid on registered portals or counter, never personal UPI IDs.", reasonHi: "बिजली का बिल हमेशा आधिकारिक ऐप या पोर्टल पर जमा होता है, किसी व्यक्ति के UPI पर नहीं।" }
+        ],
+        takeaway: {
+          en: "Utility departments never send messages from private mobile numbers threatening instant power cuts. Check your bill on the official state electricity app.",
+          hi: "बिजली विभाग कभी भी किसी के पर्सनल मोबाइल नंबर से बिजली काटने की धमकी नहीं भेजता। हमेशा आधिकारिक ऐप पर स्टेटस देखें।"
+        }
+      },
+
+      // 6. YouTube "Like & Earn" / Telegram Job Offer (Job/WhatsApp)
+      {
+        id: "scam_youtube_job",
+        medium: "job",
+        isScam: true,
+        difficulty: 1,
+        category: "job",
+        triggers: ["reward"],
+        sender: {
+          name: "Global Talent Recruiters (Sarah)",
+          handle: "+1 (555) 019-2831",
+          avatar: "💼",
+          verified: false
+        },
+        content: {
+          en: "Dear candidate, I am Sarah from Global Talent HR. We saw your resume online. We offer a Part-Time Remote Assistant role: Earn $80-$300/day just by liking 15 YouTube videos and giving 5-star Google ratings. No experience needed. Work 20 mins a day. Join our Telegram manager @fictional_easy_money to start immediately!",
+          hi: "प्रिय उम्मीदवार, मैं Global Talent HR से सारा हूँ। हमने आपका बायोडाटा देखा। हम पार्ट-टाइम वर्क फ्रॉम होम नौकरी दे रहे हैं: केवल YouTube वीडियो लाइक करके और Google रेटिंग देकर रोजाना ₹3,000-₹5,000 कमाएं। दिन में 20 मिनट काम। शुरू करने के लिए तुरंत टेलीग्राम @fictional_easy_money पर संपर्क करें!"
+        },
+        tokens: [
+          { textEn: "Earn $80-$300/day just by liking 15 YouTube videos", textHi: "केवल YouTube वीडियो लाइक करके रोजाना ₹3,000-₹5,000 कमाएं", isFlag: true, reasonEn: "Preposterously high compensation for trivial tasks is the hallmark of task-investment fraud.", reasonHi: "आसान काम के बदले भारी वेतन का वादा task scam का सबसे बड़ा संकेत है।" },
+          { textEn: "Join our Telegram manager @fictional_easy_money", textHi: "टेलीग्राम @fictional_easy_money पर संपर्क करें", isFlag: true, reasonEn: "Scammers move victims to Telegram where they eventually demand 'prepaid task deposits'.", reasonHi: "टेलीग्राम पर ले जाकर आगे चलकर 'टास्क पूरा करने हेतु पैसे जमा करने' का दबाव बनाया जाता है।" },
+          { textEn: "No experience needed. Work 20 mins a day", textHi: "बिना किसी अनुभव के 20 मिनट काम", isFlag: true, reasonEn: "Unrealistic low-effort claim to lure job seekers.", reasonHi: "कम मेहनत में ज्यादा कमाई का झूठा लालच।" }
+        ],
+        takeaway: {
+          en: "No legitimate company pays huge sums for liking videos. Any job that asks you to pay money or deposit funds to unlock tasks is 100% a scam.",
+          hi: "वीडियो लाइक करने के लिए कोई कंपनी हजारों रुपये नहीं देती। कोई भी नौकरी जो काम देने के लिए पैसे मांगे, वह 100% फर्जी है।"
+        }
+      },
+
+      // 7. Mega Lucky Draw SUV Prize (SMS)
+      {
+        id: "scam_lottery_car",
+        medium: "sms",
+        isScam: true,
+        difficulty: 1,
+        category: "lottery",
+        triggers: ["reward", "authority"],
+        sender: {
+          name: "MegaMart Awards",
+          handle: "+91-98000-00000",
+          avatar: "🎉",
+          verified: false
+        },
+        content: {
+          en: "CONGRATULATIONS! Your mobile number has been selected as the 1st PRIZE winner in MegaMart's 15th Anniversary Lucky Draw! You won a brand new SUV car or $35,000 cash. To claim, call Senior Officer Mr. Sharma at +91-98000-00000 or click http://megamart-prize-claims.test/win.",
+          hi: "बधाई हो! आपका मोबाइल नंबर MegaMart के 15वें वार्षिक लकी ड्रा में प्रथम पुरस्कार के लिए चुना गया है! आपने एक नई SUV कार या ₹25 लाख नकद जीते हैं। अपना इनाम पाने हेतु तुरंत अधिकारी श्री शर्मा से +91-98000-00000 पर संपर्क करें या यहां क्लिक करें: http://megamart-prize-claims.test/win"
+        },
+        tokens: [
+          { textEn: "selected as the 1st PRIZE winner in MegaMart's 15th Anniversary", textHi: "प्रथम पुरस्कार के लिए चुना गया है! आपने एक नई SUV कार या ₹25 लाख नकद जीते हैं", isFlag: true, reasonEn: "You cannot win a lottery or raffle that you never entered.", reasonHi: "जिस लकी ड्रा में आपने कभी भाग ही नहीं लिया, उसे आप कभी नहीं जीत सकते।" },
+          { textEn: "call Senior Officer Mr. Sharma at +91-98000-00000", textHi: "अधिकारी श्री शर्मा से +91-98000-00000 पर संपर्क करें", isFlag: true, reasonEn: "Directing you to call a personal mobile where they will demand 'registration taxes'.", reasonHi: "व्यक्तिगत नंबर जहां बात करने पर 'जीएसटी या डिलीवरी टैक्स' के नाम पर पैसे मांगे जाते हैं।" },
+          { textEn: "http://megamart-prize-claims.test/win", textHi: "http://megamart-prize-claims.test/win", isFlag: true, reasonEn: "Phishing site designed to harvest personal information.", reasonHi: "निजी जानकारी चुराने के लिए बनाया गया फर्जी लिंक।" }
+        ],
+        takeaway: {
+          en: "If you didn't buy a lottery ticket, you didn't win. Genuine companies never ask winners to pay upfront processing fees or taxes to receive a prize.",
+          hi: "यदि आपने कोई लॉटरी टिकट नहीं खरीदा, तो आप नहीं जीत सकते। इनाम देने के बदले टैक्स या फीस मांगना हमेशा ठगी होती है।"
+        }
+      },
+
+      // 8. Fake Income Tax Refund Approval (Email)
+      {
+        id: "scam_tax_refund",
+        medium: "email",
+        isScam: true,
+        difficulty: 2,
+        category: "authority_spoof",
+        triggers: ["authority", "reward", "urgency"],
+        sender: {
+          name: "Income Tax Department Portal",
+          handle: "refund-service@tax-dept-portal-secure.test",
+          avatar: "🏛️",
+          verified: false
+        },
+        subject: {
+          en: "Your Income Tax Refund of $985.40 is approved - Action required",
+          hi: "आपका आयकर रिफंड ₹34,500 स्वीकृत हो गया है - त्वरित कार्रवाई आवश्यक"
+        },
+        content: {
+          en: "Dear Taxpayer, An excess tax deduction of $985.40 has been approved. Due to a mismatch in bank records, the amount could not be credited. Please enter your Internet Banking login and Debit Card PIN on our secure portal within 48 hours to receive direct deposit: [Claim Refund Now -> http://tax-dept-refunds.test]",
+          hi: "प्रिय करदाता, आपका ₹34,500 का आयकर रिफंड स्वीकृत हो गया है। बैंक रिकॉर्ड में विसंगति के कारण राशि जमा नहीं हो सकी। अपना नेट बैंकिंग लॉगिन और एटीएम पिन यहां दर्ज करके 48 घंटे में रिफंड प्राप्त करें: [रिफंड अभी क्लेम करें -> http://tax-dept-refunds.test]"
+        },
+        tokens: [
+          { textEn: "enter your Internet Banking login and Debit Card PIN", textHi: "अपना नेट बैंकिंग लॉगिन और एटीएम पिन यहां दर्ज करके", isFlag: true, reasonEn: "The Tax Department NEVER asks for your Debit Card PIN or Net Banking password.", reasonHi: "आयकर विभाग कभी भी एटीएम पिन या इंटरनेट बैंकिंग पासवर्ड नहीं मांगता।" },
+          { textEn: "tax-dept-portal-secure.test", textHi: "tax-dept-portal-secure.test", isFlag: true, reasonEn: "Fake sender domain pretending to be government portal.", reasonHi: "फर्जी डोमेन जो सरकारी वेबसाइट होने का ढोंग कर रही है।" },
+          { textEn: "http://tax-dept-refunds.test", textHi: "http://tax-dept-refunds.test", isFlag: true, reasonEn: "Phishing site created to steal banking credentials.", reasonHi: "बैंक का पासवर्ड चुराने वाली नकली वेबसाइट।" }
+        ],
+        takeaway: {
+          en: "Tax refunds are credited directly into your pre-validated bank account automatically. The government never asks for card PINs or passwords via email.",
+          hi: "टैक्स रिफंड सीधे आपके सत्यापित बैंक खाते में आता है। सरकार ईमेल में लिंक भेजकर कभी एटीएम पिन या पासवर्ड नहीं मांगती।"
+        }
+      },
+
+      // 9. Fake Police "Digital Arrest" Notice (WhatsApp / SMS)
+      {
+        id: "scam_digital_arrest",
+        medium: "whatsapp",
+        isScam: true,
+        difficulty: 3,
+        category: "authority_spoof",
+        triggers: ["authority", "fear", "urgency"],
+        sender: {
+          name: "Central Cyber Crime Cell (Official)",
+          handle: "+91 91122-33445",
+          avatar: "👮",
+          verified: false
+        },
+        content: {
+          en: "NOTICE FROM CENTRAL POLICE / CYBER CELL: A parcel containing illegal passports and suspicious chemicals booked with your ID has been confiscated at customs. You are placed under Digital Arrest. Join Skype video call immediately with Senior Inspector or a non-bailable arrest warrant will be dispatched to your house.",
+          hi: "साइबर क्राइम पुलिस नोटिस: आपके पहचान पत्र से बुक किया गया एक पार्सल हवाई अड्डे पर पकड़ा गया है जिसमें अवैध दस्तावेज पाए गए हैं। आपको 'डिजिटल अरेस्ट' किया गया है। तुरंत हमारे जांच अधिकारी से वीडियो कॉल पर जुड़ें अन्यथा गैर-जमानती वारंट घर भेजा जाएगा।"
+        },
+        tokens: [
+          { textEn: "placed under Digital Arrest", textHi: "आपको 'डिजिटल अरेस्ट' किया गया है", isFlag: true, reasonEn: "There is NO legal provision or concept called 'Digital Arrest' under criminal law.", reasonHi: "कानून में 'डिजिटल अरेस्ट' नाम की कोई व्यवस्था नहीं है। यह ठगों का गढ़ा हुआ शब्द है।" },
+          { textEn: "Join Skype video call immediately", textHi: "तुरंत हमारे जांच अधिकारी से वीडियो कॉल पर जुड़ें", isFlag: true, reasonEn: "Real police never interrogate citizens over Skype or WhatsApp video calls.", reasonHi: "असली पुलिस कभी भी व्हाट्सएप या स्काइप वीडियो कॉल पर पूछताछ या अरेस्ट नहीं करती।" },
+          { textEn: "non-bailable arrest warrant will be dispatched", textHi: "गैर-जमानती वारंट घर भेजा जाएगा", isFlag: true, reasonEn: "Fear tactic to paralyze critical thinking.", reasonHi: "डराकर सोचने-समझने की क्षमता खत्म करने की साजिश।" }
+        ],
+        takeaway: {
+          en: "Digital Arrest is completely fake. Law enforcement agencies never arrest or conduct court hearings over Skype/WhatsApp video calls.",
+          hi: "'डिजिटल अरेस्ट' पूरी तरह फर्जी है। पुलिस या कोर्ट कभी भी वीडियो कॉल पर किसी को हिरासत में नहीं लेते।"
+        }
+      },
+
+      // 10. Remote Job Equipment Advance Fee (Email)
+      {
+        id: "scam_job_equipment_fee",
+        medium: "job",
+        isScam: true,
+        difficulty: 2,
+        category: "job",
+        triggers: ["reward", "authority"],
+        sender: {
+          name: "SkyLink Aviation HR",
+          handle: "careers@skylink-aviation-hiring.test",
+          avatar: "✈️",
+          verified: false
+        },
+        subject: {
+          en: "Offer Letter: Remote Data Entry Specialist ($45/hr)",
+          hi: "नियुक्ति पत्र: रिमोट डेटा एंट्री स्पेशलिस्ट (₹45,000/माह)"
+        },
+        content: {
+          en: "Congratulations! You have been selected without an interview based on your profile. Salary: $45/hour. Before your start date next Monday, you must purchase the encrypted home-office laptop ($250) from our certified vendor. The amount will be 100% reimbursed in your first paycheck.",
+          hi: "बधाई हो! आपके प्रोफाइल के आधार पर आपको बिना इंटरव्यू के चुन लिया गया है। वेतन: ₹45,000/माह। काम शुरू करने से पहले आपको हमारे प्रमाणित वेंडर से एन्क्रिप्टेड ऑफिस लैपटॉप (लागत ₹15,000) मंगवाना होगा, जिसे पहली सैलरी में वापस कर दिया जाएगा।"
+        },
+        tokens: [
+          { textEn: "selected without an interview", textHi: "बिना इंटरव्यू के चुन लिया गया है", isFlag: true, reasonEn: "Legitimate corporate jobs always conduct rigorous interviews before hiring.", reasonHi: "बिना किसी इंटरव्यू या परीक्षा के नियुक्ति पत्र देना फर्जीवाड़े का संकेत है।" },
+          { textEn: "must purchase the encrypted home-office laptop ($250) from our certified vendor", textHi: "प्रमाणित वेंडर से एन्क्रिप्टेड ऑफिस लैपटॉप (लागत ₹15,000) मंगवाना होगा", isFlag: true, reasonEn: "The 'certified vendor' is the scammer stealing your advance fee.", reasonHi: "वेंडर के नाम पर पैसे ऐंठना ठगी का पुराना तरीका है।" },
+          { textEn: "100% reimbursed in your first paycheck", textHi: "पहली सैलरी में वापस कर दिया जाएगा", isFlag: true, reasonEn: "False promise to convince you to send money upfront.", reasonHi: "पैसे ऐंठने के लिए दिया गया झूठा आश्वासन।" }
+        ],
+        takeaway: {
+          en: "Real employers supply necessary equipment at their own cost. Never pay money upfront for laptops, training kits, or software to get a job.",
+          hi: "सच्ची कंपनियां काम करने के उपकरण खुद मुफ्त देती हैं। नौकरी पाने के लिए कभी भी लैपटॉप या ट्रेनिंग के नाम पर पैसे न दें।"
+        }
+      },
+
+      // 11. CEO / Boss Urgent Gift Card Request (Email / WhatsApp)
+      {
+        id: "scam_ceo_giftcard",
+        medium: "email",
+        isScam: true,
+        difficulty: 2,
+        category: "authority_spoof",
+        triggers: ["authority", "urgency"],
+        sender: {
+          name: "David Vance (CEO)",
+          handle: "david.vance.internal.corp@gmail.com",
+          avatar: "👔",
+          verified: false
+        },
+        subject: {
+          en: "Quick favor - Are you at your desk right now?",
+          hi: "तुरंत एक मदद चाहिए - क्या आप अभी अपनी डेस्क पर हैं?"
+        },
+        content: {
+          en: "I'm tied up in a confidential client board meeting and can't take phone calls. I need you to purchase 5 Apple Gift Cards ($100 each) right away for our client presentation. Scratch the back and email me photos of the codes. I will have accounting reimburse you before 5 PM. Please keep this confidential.",
+          hi: "मैं क्लाइंट्स के साथ एक गोपनीय बोर्ड बैठक में हूँ और फोन नहीं उठा सकता। मुझे क्लाइंट प्रेजेंटेशन के लिए तुरंत ₹20,000 के 5 गिफ्ट कार्ड चाहिए। पीछे स्क्रैच करके कोड की फोटो मुझे ईमेल करें। शाम 5 बजे तक कंपनी से आपका पैसा वापस मिल जाएगा। इसे गुप्त रखें।"
+        },
+        tokens: [
+          { textEn: "david.vance.internal.corp@gmail.com", textHi: "david.vance.internal.corp@gmail.com", isFlag: true, reasonEn: "Sent from a free personal @gmail.com account rather than official corporate domain.", reasonHi: "कंपनी के डोमेन के बजाय मुफ्त जीमेल (@gmail.com) पते से भेजा गया।" },
+          { textEn: "purchase 5 Apple Gift Cards", textHi: "गिफ्ट कार्ड चाहिए। पीछे स्क्रैच करके कोड की फोटो मुझे ईमेल करें", isFlag: true, reasonEn: "Gift cards are untraceable and cannot be refunded once codes are shared.", reasonHi: "गिफ्ट कार्ड कोड शेयर होते ही पैसा गायब हो जाता है, इसे ट्रेस नहीं किया जा सकता।" },
+          { textEn: "Please keep this confidential", textHi: "इसे गुप्त रखें", isFlag: true, reasonEn: "Isolating you so you don't check with coworkers or finance.", reasonHi: "ताकि आप सहकर्मियों से बात करके सच्चाई न जान सकें।" }
+        ],
+        takeaway: {
+          en: "Always inspect the sender's actual email address. No executive will ever ask subordinates to buy gift cards on personal funds via email.",
+          hi: "हमेशा प्रेषक का असली ईमेल पता जांचें। कोई भी बॉस अपने कर्मचारियों से अपने पैसे से गिफ्ट कार्ड खरीदने को नहीं कहेगा।"
+        }
+      },
+
+      // 12. Guaranteed 500% Crypto Profit Bot (WhatsApp)
+      {
+        id: "scam_crypto_returns",
+        medium: "whatsapp",
+        isScam: true,
+        difficulty: 1,
+        category: "lottery",
+        triggers: ["reward", "urgency"],
+        sender: {
+          name: "VIP Crypto Wealth Club",
+          handle: "+44 7911 123456",
+          avatar: "🪙",
+          verified: false
+        },
+        content: {
+          en: "VIP Crypto Elite Club: Guaranteed 300% to 500% weekly returns with our automated AI arbitrage bot. Invest $100 today and withdraw $400 tomorrow! 100% government registered and risk-free. See payment proofs of 500+ members in our channel. Limited 10 slots left today: https://crypto-vip-rich.test/join",
+          hi: "वीआईपी क्रिप्टो क्लब: हमारे ऑटोमेटेड एआई बॉट के साथ हर हफ्ते 300% से 500% पक्का मुनाफा। आज ₹5,000 लगाएं और कल ₹20,000 निकालें! 100% सुरक्षित और सरकार द्वारा मान्य। केवल 10 सीटें बची हैं: https://crypto-vip-rich.test/join"
+        },
+        tokens: [
+          { textEn: "Guaranteed 300% to 500% weekly returns", textHi: "हर हफ्ते 300% से 500% पक्का मुनाफा", isFlag: true, reasonEn: "No legitimate financial investment can ever guarantee extraordinary profits.", reasonHi: "कोई भी असली निवेश भारी मुनाफे की 'गारंटी' नहीं दे सकता।" },
+          { textEn: "Limited 10 slots left today", textHi: "केवल 10 सीटें बची हैं", isFlag: true, reasonEn: "Manufactured FOMO (fear of missing out) to force impulsive action.", reasonHi: "हड़बड़ाहट में फैसला करवाने के लिए सीमित सीटों का झूठा नाटक।" },
+          { textEn: "https://crypto-vip-rich.test/join", textHi: "https://crypto-vip-rich.test/join", isFlag: true, reasonEn: "Bogus investment scam platform.", reasonHi: "पैसा हड़पने के लिए बनाई गई फर्जी वेबसाइट।" }
+        ],
+        takeaway: {
+          en: "High returns with 'zero risk' is the textbook definition of an investment scam. Legitimate investments never promise guaranteed astronomical yields.",
+          hi: "बिना जोखिम के भारी मुनाफे का वादा हमेशा 100% धोखाधड़ी होता है। कभी भी अज्ञात सोशल मीडिया ग्रुप्स में पैसा न लगाएं।"
+        }
+      },
+
+      // 13. Airline Flight Cancelled - Call Rebooking (SMS)
+      {
+        id: "scam_airline_rebooking",
+        medium: "sms",
+        isScam: true,
+        difficulty: 2,
+        category: "courier",
+        triggers: ["urgency", "fear"],
+        sender: {
+          name: "SkyFlyer Airlines",
+          handle: "+91-88888-00000",
+          avatar: "✈️",
+          verified: false
+        },
+        content: {
+          en: "SkyFlyer Airlines: Your scheduled flight FL-302 has been cancelled due to technical maintenance. Call our instant rebooking desk at +91-88888-00000 or click http://skyflyer-refund.test to claim full ticket refund or reschedule free.",
+          hi: "SkyFlyer एयरलाइंस: तकनीकी कारणों से आपकी उड़ान FL-302 रद्द कर दी गई है। तुरंत री-बुकिंग या पूरा रिफंड पाने हेतु +91-88888-00000 पर कॉल करें या यहां क्लिक करें: http://skyflyer-refund.test"
+        },
+        tokens: [
+          { textEn: "+91-88888-00000", textHi: "+91-88888-00000", isFlag: true, reasonEn: "Airlines use verified 1800 toll-free customer service lines, not random mobile numbers.", reasonHi: "एयरलाइंस हमेशा आधिकारिक 1800 टोल-फ्री नंबर देती हैं, कोई व्यक्तिगत मोबाइल नंबर नहीं।" },
+          { textEn: "http://skyflyer-refund.test", textHi: "http://skyflyer-refund.test", isFlag: true, reasonEn: "Fake refund link designed to steal flight booking credentials and payment cards.", reasonHi: "कार्ड और टिकट जानकारी चुराने वाला फर्जी रिफंड लिंक।" },
+          { textEn: "flight FL-302 has been cancelled", textHi: "आपकी उड़ान FL-302 रद्द कर दी गई है", isFlag: true, reasonEn: "Scammers blast generic flight numbers hoping recipients have upcoming travel.", reasonHi: "यात्रियों में घबराहट पैदा करने की चाल।" }
+        ],
+        takeaway: {
+          en: "Verify travel disruptions strictly on the airline's official app or airport departure boards, never via unknown SMS numbers.",
+          hi: "उड़ान संबंधी जानकारी हमेशा एयरलाइन की आधिकारिक वेबसाइट या ऐप पर PNR डालकर चेक करें।"
+        }
+      },
+
+      // 14. Streaming Subscription Suspended (Email)
+      {
+        id: "scam_streaming_suspended",
+        medium: "email",
+        isScam: true,
+        difficulty: 2,
+        category: "fear",
+        triggers: ["urgency", "fear"],
+        sender: {
+          name: "StreamBox Billing Team",
+          handle: "support@streambox-member-renew.test",
+          avatar: "🎬",
+          verified: false
+        },
+        subject: {
+          en: "Your subscription has been placed on hold",
+          hi: "आपकी सदस्यता अस्थायी रूप से रोक दी गई है"
+        },
+        content: {
+          en: "We were unable to validate your payment details for the upcoming billing cycle. Your video streaming access has been suspended. Please update your billing information today to avoid termination: [Update Billing Details -> http://streambox-account-update.test/billing]",
+          hi: "हम अगले बिलिंग चक्र के लिए आपकी भुगतान जानकारी सत्यापित करने में असमर्थ रहे। आपकी वीडियो स्ट्रीमिंग सेवा रोक दी गई है। सेवाएं जारी रखने हेतु अपनी कार्ड जानकारी आज ही अपडेट करें: [बिलिंग अपडेट करें -> http://streambox-account-update.test/billing]"
+        },
+        tokens: [
+          { textEn: "support@streambox-member-renew.test", textHi: "support@streambox-member-renew.test", isFlag: true, reasonEn: "Spoofed sender address on an unofficial domain.", reasonHi: "नकली ईमेल पता जो आधिकारिक कंपनी का नहीं है।" },
+          { textEn: "http://streambox-account-update.test/billing", textHi: "http://streambox-account-update.test/billing", isFlag: true, reasonEn: "Phishing page created to harvest debit/credit card numbers and CVVs.", reasonHi: "क्रेडिट कार्ड और सीवीवी चुराने के लिए बनाया गया नकली वेब पेज।" },
+          { textEn: "avoid termination", textHi: "सेवाएं जारी रखने हेतु", isFlag: true, reasonEn: "Urgent pressure to click immediately without inspecting the URL.", reasonHi: "जल्दबाजी में लिंक पर क्लिक करवाने की युक्ति।" }
+        ],
+        takeaway: {
+          en: "Never update payment methods through email links. Open the official streaming app directly on your TV or phone and check Account Settings.",
+          hi: "ईमेल के लिंक पर क्लिक करके कभी भी कार्ड डिटेल्स न भरें। हमेशा अपने टीवी या फोन में ऐप खोलकर अकाउंट सेटिंग्स देखें।"
+        }
+      },
+
+      // 15. Social Media Copyright Strike (Email)
+      {
+        id: "scam_copyright_strike",
+        medium: "email",
+        isScam: true,
+        difficulty: 2,
+        category: "authority_spoof",
+        triggers: ["fear", "urgency", "authority"],
+        sender: {
+          name: "SocialMedia Copyright Protection",
+          handle: "copyright-desk@socialmedia-support-desk.test",
+          avatar: "📸",
+          verified: false
+        },
+        subject: {
+          en: "Copyright Infringement Notice: Your account will be permanently deleted in 24 hours",
+          hi: "कॉपीराइट उल्लंघन सूचना: आपका अकाउंट 24 घंटे में स्थायी रूप से हटा दिया जाएगा"
+        },
+        content: {
+          en: "We have detected multiple copyright violations on your recent photo posts. If you believe this is a mistake, fill out the dispute appeal form within 24 hours by verifying your login password: [Submit Appeal Form -> http://social-copyright-appeal.test/login]. If not verified, your account will be deleted permanently.",
+          hi: "हमने आपकी हालिया फोटो पोस्ट पर कई कॉपीराइट उल्लंघन पाए हैं। यदि आपको लगता है कि यह गलती है, तो अपना पासवर्ड दर्ज करके 24 घंटे में अपील करें: [अपील फॉर्म भरें -> http://social-copyright-appeal.test/login]। अन्यथा आपका खाता स्थायी रूप से मिटा दिया जाएगा।"
+        },
+        tokens: [
+          { textEn: "verifying your login password", textHi: "अपना पासवर्ड दर्ज करके", isFlag: true, reasonEn: "Legitimate copyright forms never ask you to submit your password on a web form.", reasonHi: "असली कॉपीराइट फॉर्म कभी भी पासवर्ड दर्ज करने को नहीं कहते।" },
+          { textEn: "http://social-copyright-appeal.test/login", textHi: "http://social-copyright-appeal.test/login", isFlag: true, reasonEn: "Credential harvester created to hijack your social media account.", reasonHi: "आपका अकाउंट हैक करने के लिए बनाया गया फर्जी लॉगिन पेज।" },
+          { textEn: "permanently deleted in 24 hours", textHi: "24 घंटे में स्थायी रूप से हटा दिया जाएगा", isFlag: true, reasonEn: "Intimidation deadline to bypass rational thought.", reasonHi: "हड़बड़ाहट पैदा करने के लिए 24 घंटे की फर्जी डेडलाइन।" }
+        ],
+        takeaway: {
+          en: "Social media platforms handle copyright disputes inside the official mobile app notifications, never by asking you to type your password on external links.",
+          hi: "सोशल मीडिया प्लेटफॉर्म कॉपीराइट की सूचना सीधे ऐप के अंदर देते हैं, बाहरी लिंक पर पासवर्ड दर्ज करने को कभी नहीं कहते।"
+        }
+      },
+
+      // 16. Telecom SIM Deactivation Notice (SMS)
+      {
+        id: "scam_sim_deactivation",
+        medium: "sms",
+        isScam: true,
+        difficulty: 2,
+        category: "kyc",
+        triggers: ["fear", "urgency", "authority"],
+        sender: {
+          name: "Telecom Regulatory Alert",
+          handle: "55432",
+          avatar: "📶",
+          verified: false
+        },
+        content: {
+          en: "Telecom Dept Alert: Dear subscriber, your SIM card KYC documentation has expired. Your outgoing calls and data services will be terminated in 24 hours. Call Toll-Free Helpline: 91234-XXXXX or download the TelecomVerify.apk file from http://telecom-update.test/app to continue service.",
+          hi: "दूरसंचार विभाग सूचना: प्रिय उपभोक्ता, आपका सिम कार्ड केवाईसी समाप्त हो गया है। 24 घंटे में आपकी सभी सेवाएं बंद कर दी जाएंगी। तुरंत 91234-XXXXX पर कॉल करें या TelecomVerify.apk ऐप डाउनलोड करें: http://telecom-update.test/app"
+        },
+        tokens: [
+          { textEn: "download the TelecomVerify.apk file", textHi: "TelecomVerify.apk ऐप डाउनलोड करें", isFlag: true, reasonEn: "Downloading an unknown .apk file installs dangerous spyware/malware on your phone.", reasonHi: "अज्ञात .apk फाइल डाउनलोड करवाने का मतलब फोन में जासूसी मैलवेयर डालना है।" },
+          { textEn: "Call Toll-Free Helpline: 91234-XXXXX", textHi: "तुरंत 91234-XXXXX पर कॉल करें", isFlag: true, reasonEn: "Personal mobile masquerading as a toll-free number.", reasonHi: "टोल-फ्री के नाम पर ठगों का निजी नंबर।" },
+          { textEn: "terminated in 24 hours", textHi: "24 घंटे में आपकी सभी सेवाएं बंद कर दी जाएंगी", isFlag: true, reasonEn: "Panic trick used to get you to install malware quickly.", reasonHi: "तुरंत मैलवेयर इंस्टॉल करवाने के लिए 24 घंटे की झूठी धमकी।" }
+        ],
+        takeaway: {
+          en: "NEVER download or install '.apk' files from SMS links. Telecom operators update SIM KYC only in authorized stores or their official app store apps.",
+          hi: "SMS लिंक से कभी भी '.apk' फाइल डाउनलोड न करें। सिम केवाईसी केवल अधिकृत टेलीकॉम स्टोर या प्ले स्टोर ऐप में होता है।"
+        }
+      },
+
+      // ------------------------------------------------------------------------
+      // 6 GENUINELY SAFE SCENARIOS (Teaches users not to be paranoid of real msgs)
+      // ------------------------------------------------------------------------
+
+      // 17. SAFE SCENARIO 1: Legitimate Bank Netbanking OTP (SMS)
+      {
+        id: "safe_bank_otp",
+        medium: "sms",
+        isScam: false,
+        difficulty: 1,
+        category: "safe",
+        triggers: [],
+        sender: {
+          name: "Example Bank Official",
+          handle: "AD-EXBANK",
+          avatar: "🏛️",
+          verified: true
+        },
+        content: {
+          en: "Example Bank: 489201 is your OTP for netbanking login on 28-Oct-2026 13:45. Valid for 5 minutes. NEVER share this OTP or your password with anyone, including bank staff. If you did not initiate this, call 1800-000-0000 immediately.",
+          hi: "Example Bank: नेटबैंकिंग लॉगिन के लिए आपका ओटीपी 489201 है। यह 5 मिनट के लिए मान्य है। बैंक कर्मचारियों सहित किसी के साथ भी यह ओटीपी साझा न करें। यदि आपने यह अनुरोध नहीं किया है, तो तुरंत 1800-000-0000 पर कॉल करें।"
+        },
+        tokens: [],
+        safeReason: {
+          en: "This message contains NO clickable links, uses the bank's official alphanumeric sender ID (AD-EXBANK), provides a legitimate 1800 toll-free number, and explicitly warns NEVER to share the OTP with anyone.",
+          hi: "इस संदेश में कोई क्लिक करने वाला लिंक नहीं है, यह आधिकारिक सेंडर आईडी (AD-EXBANK) से आया है, असली 1800 टोल-फ्री नंबर देता है और स्पष्ट चेतावनी देता है कि ओटीपी किसी को न बताएं।"
+        },
+        takeaway: {
+          en: "Real OTP messages state what action triggered them, contain NO links, and remind you to keep the code private.",
+          hi: "असली OTP संदेशों में कोई लिंक नहीं होता और वे साफ लिखते हैं कि यह कोड किसी को भी न बताएं।"
+        }
+      },
+
+      // 18. SAFE SCENARIO 2: Bank Monthly Statement Notification (Email)
+      {
+        id: "safe_bank_statement",
+        medium: "email",
+        isScam: false,
+        difficulty: 2,
+        category: "safe",
+        triggers: [],
+        sender: {
+          name: "Example Bank E-Statements",
+          handle: "statements@alerts.example-bank.test",
+          avatar: "🏛️",
+          verified: true
+        },
+        subject: {
+          en: "Your Example Bank Account Statement for September 2026",
+          hi: "सितंबर 2026 के लिए आपका Example Bank खाता विवरण"
+        },
+        content: {
+          en: "Dear Account Holder (ending in **4921), Your monthly e-statement for September 2026 is now generated. You can view your complete statement anytime by logging into our official mobile app or visiting our website directly at https://www.example-bank.test. Note: Example Bank will never ask for your PIN, CVV, or passwords via email.",
+          hi: "प्रिय खाताधारक (खाता संख्या अंतिम 4921), सितंबर 2026 का आपका मासिक ई-स्टेटमेंट तैयार है। आप हमारे आधिकारिक मोबाइल ऐप में लॉगिन करके कभी भी अपना स्टेटमेंट देख सकते हैं। नोट: Example Bank ईमेल पर कभी भी आपका पिन, सीवीवी या पासवर्ड नहीं मांगता।"
+        },
+        tokens: [],
+        safeReason: {
+          en: "Addressed with your masked account digits (**4921), does NOT ask you to enter credentials, links only to the primary clean domain, and explicitly reminds you that banks never request PINs or passwords.",
+          hi: "खाते के अंतिम चार अंक (**4921) सही दर्शाता है, कोई पासवर्ड या ओटीपी नहीं मांगता और आधिकारिक ऐप में जाने की सलाह देता है।"
+        },
+        takeaway: {
+          en: "Legitimate bank statements notify you without panic, never ask for passwords, and address you using verified masked details.",
+          hi: "असली बैंक सूचनाएं बिना किसी जल्दबाजी या डर के आती हैं और कभी पासवर्ड या पिन दर्ज करने को नहीं कहतीं।"
+        }
+      },
+
+      // 19. SAFE SCENARIO 3: Courier Delivery PIN Notification (SMS)
+      {
+        id: "safe_courier_doorstep",
+        medium: "sms",
+        isScam: false,
+        difficulty: 1,
+        category: "safe",
+        triggers: [],
+        sender: {
+          name: "FastDelivery Express",
+          handle: "VK-FASTDEL",
+          avatar: "📦",
+          verified: true
+        },
+        content: {
+          en: "FastDelivery: Out for delivery! Your order #FD-99214 from BookStore will be delivered today by courier partner Rajesh. Share this 4-digit Delivery PIN: 7392 with the delivery agent ONLY when the package is handed to you in person. Track order status directly inside your BookStore app.",
+          hi: "FastDelivery: आपका ऑर्डर आज डिलीवरी एजेंट राजेश द्वारा डिलीवर किया जाएगा। यह 4-अंकों का डिलीवरी पिन: 7392 केवल तभी साझा करें जब पार्सल आपके हाथ में भौतिक रूप से मिल जाए। अपने BookStore ऐप में स्टेटस देखें।"
+        },
+        tokens: [],
+        safeReason: {
+          en: "It does NOT ask for any money or online fees. It clearly instructs you to share the PIN ONLY at physical doorstep handover, uses a registered sender header, and advises checking the order in the merchant's app.",
+          hi: "इसमें कोई पैसा या फीस नहीं मांगी गई है। यह पिन केवल पार्सल हाथ में मिलने पर देने का निर्देश देता है और कोई संदिग्ध लिंक नहीं है।"
+        },
+        takeaway: {
+          en: "Legitimate delivery PINs are free and shared ONLY in person when receiving a physical parcel—never paid for online via SMS.",
+          hi: "डिलीवरी पिन केवल पार्सल हाथ में आने पर एजेंट को आमने-सामने बताया जाता है, इसके लिए ऑनलाइन कोई पैसा नहीं लगता।"
+        }
+      },
+
+      // 20. SAFE SCENARIO 4: Genuine Job Interview Confirmation (Email)
+      {
+        id: "safe_job_interview",
+        medium: "email",
+        isScam: false,
+        difficulty: 2,
+        category: "safe",
+        triggers: [],
+        sender: {
+          name: "TechCorp Recruiting Team",
+          handle: "recruiting@techcorp.test",
+          avatar: "💼",
+          verified: true
+        },
+        subject: {
+          en: "Interview Confirmation: Junior Web Developer - Technical Round",
+          hi: "इंटरव्यू पुष्टि: जूनियर वेब डेवलपर - तकनीकी राउंड"
+        },
+        content: {
+          en: "Hi Alex, Thank you for speaking with our talent acquisition team yesterday. We are pleased to confirm your video interview with our engineering manager, Priya Patel, on Friday at 3:00 PM via Google Meet. Attached is the calendar invitation (.ics). No preparation fees or software purchases are required. We look forward to meeting you.",
+          hi: "नमस्ते, हमारी टैलेंट टीम से बातचीत के बाद हम शुक्रवार दोपहर 3:00 बजे Google Meet पर आपके इंटरव्यू की पुष्टि करते हैं। कैलेंडर आमंत्रण संलग्न है। किसी भी प्रकार के शुल्क या सॉफ्टवेयर खरीद की कोई आवश्यकता नहीं है।"
+        },
+        tokens: [],
+        safeReason: {
+          en: "Follows prior mutual communication, sent from the corporate domain, clearly states that NO payment or equipment purchases are required, and includes standard calendar details.",
+          hi: "कंपनी के असली डोमेन से भेजा गया है, पहले हुई बातचीत का संदर्भ देता है और साफ कहता है कि कोई पैसा या उपकरण खरीदने की जरूरत नहीं है।"
+        },
+        takeaway: {
+          en: "Real interview invitations will never demand registration fees, laptop deposits, or training kit payments.",
+          hi: "सच्चे इंटरव्यू आमंत्रण कभी भी रजिस्ट्रेशन फीस या ट्रेनिंग किट के पैसे नहीं मांगते।"
+        }
+      },
+
+      // 21. SAFE SCENARIO 5: Utility Bill Payment Receipt Confirmation (SMS)
+      {
+        id: "safe_utility_receipt",
+        medium: "sms",
+        isScam: false,
+        difficulty: 1,
+        category: "safe",
+        triggers: [],
+        sender: {
+          name: "State Power Board",
+          handle: "BP-PWRBRD",
+          avatar: "⚡",
+          verified: true
+        },
+        content: {
+          en: "State Power Board: Received with thanks payment of $42.50 against Consumer ID 109847291 on 28-Oct-2026. Transaction Ref: TXN-89412084. Current outstanding balance: $0.00. Thank you for paying on time.",
+          hi: "राज्य विद्युत बोर्ड: उपभोक्ता आईडी 109847291 के लिए ₹1,450 का भुगतान सफलतापूर्वक प्राप्त हुआ। ट्रांजैक्शन संदर्भ: TXN-89412084। वर्तमान बकाया: ₹0.00। समय पर भुगतान के लिए धन्यवाद।"
+        },
+        tokens: [],
+        safeReason: {
+          en: "This is a simple confirmation receipt for a completed transaction. It contains zero clickable links, asks for no action, shows a clear reference transaction number, and confirms a balance of $0.00.",
+          hi: "यह केवल भुगतान की रसीद है। इसमें कोई लिंक नहीं है, कोई कार्रवाई करने को नहीं कहा गया है और ट्रांजैक्शन नंबर स्पष्ट दर्ज है।"
+        },
+        takeaway: {
+          en: "Legitimate payment receipts simply acknowledge your past action with a transaction number and demand nothing further.",
+          hi: "असली भुगतान रसीदें केवल ट्रांजैक्शन नंबर के साथ पुष्टि करती हैं और आपसे कुछ भी करने को नहीं कहतीं।"
+        }
+      },
+
+      // 22. SAFE SCENARIO 6: School Official Parent-Teacher Meeting Notice (WhatsApp)
+      {
+        id: "safe_school_notice",
+        medium: "whatsapp",
+        isScam: false,
+        difficulty: 1,
+        category: "safe",
+        triggers: [],
+        sender: {
+          name: "St. Xavier Public School (Official)",
+          handle: "Verified School Broadcast Channel",
+          avatar: "🏫",
+          verified: true
+        },
+        content: {
+          en: "Dear Parents, This is a reminder for the upcoming Term 1 Parent-Teacher Meeting scheduled for Saturday, 31st October, from 9:00 AM to 1:00 PM at the main school campus. Please carry your parent ID card. Students should attend in school uniform. For queries, contact the school reception during working hours.",
+          hi: "प्रिय अभिभावक, शनिवार 31 अक्टूबर को सुबह 9:00 से दोपहर 1:00 बजे तक मुख्य स्कूल परिसर में अभिभावक-शिक्षक बैठक (PTM) का आयोजन किया गया है। कृपया अपना पैरेंट आईडी कार्ड साथ लाएं। किसी भी प्रश्न हेतु स्कूल रिसेप्शन पर संपर्क करें।"
+        },
+        tokens: [],
+        safeReason: {
+          en: "Sent from a verified school broadcast channel, requests in-person attendance at the physical school campus, has NO external payment requests, and asks for no personal passwords.",
+          hi: "स्कूल के आधिकारिक चैनल से भेजा गया है, स्कूल परिसर में आने की सामान्य सूचना है और कोई पैसा या लिंक नहीं मांगता।"
+        },
+        takeaway: {
+          en: "Genuine community and institutional announcements invite you to physical venues and never ask for confidential financial data.",
+          hi: "संस्थानों के असली नोटिस सामान्य जानकारी देते हैं और किसी लिंक पर गुप्त जानकारी नहीं मांगते।"
+        }
+      }
+    ];
+
+    // --------------------------------------------------------------------------
+    // 5. PERSONALIZED 8-POINT CHECKLIST TEMPLATES
+    // --------------------------------------------------------------------------
+    const SAFETY_CHECKLIST_RULES = [
+      {
+        id: "rule_sms_links",
+        category: "kyc",
+        titleEn: "Never Click Links in SMS Messages",
+        titleHi: "SMS में आए वेब लिंक पर कभी क्लिक न करें",
+        descEn: "Even if an SMS claims your bank, SIM, or electricity will be blocked, never click the link. Open your official bank app directly.",
+        descHi: "चाहे बैंक बंद होने या बिजली कटने की धमकी हो, SMS में दिए गए लिंक पर कभी क्लिक न करें। हमेशा आधिकारिक ऐप सीधे खोलें।"
+      },
+      {
+        id: "rule_upi_pin",
+        category: "payment",
+        titleEn: "UPI PIN is Only for Sending Money",
+        titleHi: "UPI पिन केवल पैसे भेजने के लिए होता है",
+        descEn: "You NEVER need to enter your UPI PIN or scan a QR code to receive money. Entering a PIN always withdraws funds.",
+        descHi: "पैसे पाने के लिए कभी UPI पिन या QR स्कैन की जरूरत नहीं होती। पिन डालने से हमेशा आपके खाते से पैसा कटता है।"
+      },
+      {
+        id: "rule_courier_fees",
+        category: "courier",
+        titleEn: "Couriers Never Charge Redelivery Fees via SMS",
+        titleHi: "कूरियर डिलीवरी के लिए SMS से ऑनलाइन फीस नहीं मांगते",
+        descEn: "Scammers use $1.50 (₹50) fake address fees to steal card numbers. Official couriers resolve address issues at doorstep.",
+        descHi: "ठग ₹50 जैसी मामूली फीस का झांसा देकर कार्ड का विवरण चुराते हैं। असली कूरियर घर पर आकर ही पता सत्यापित करते हैं।"
+      },
+      {
+        id: "rule_family_call",
+        category: "family",
+        titleEn: "Always Call Back on Known Numbers in Emergencies",
+        titleHi: "इमरजेंसी में हमेशा बच्चे के पुराने नंबर पर कॉल करें",
+        descEn: "If a loved one messages from an unknown number demanding urgent rent or hospital funds, always call their old number first.",
+        descHi: "यदि कोई नया नंबर बच्चे के नाम से इमरजेंसी पैसे मांगे, तो तुरंत उनके पुराने नंबर पर कॉल करके पुष्टि करें।"
+      },
+      {
+        id: "rule_digital_arrest",
+        category: "authority_spoof",
+        titleEn: "Digital Arrest is 100% Fake",
+        titleHi: "'डिजिटल अरेस्ट' पूरी तरह फर्जी है",
+        descEn: "Police, CBI, and Customs never conduct trials, interrogations, or arrests over Skype or WhatsApp video calls.",
+        descHi: "पुलिस या सरकारी एजेंसियां कभी भी व्हाट्सएप या स्काइप वीडियो कॉल पर पूछताछ या अरेस्ट नहीं करती हैं।"
+      },
+      {
+        id: "rule_easy_jobs",
+        category: "job",
+        titleEn: "Never Pay Money to Get a Job",
+        titleHi: "नौकरी पाने के लिए कभी कोई शुल्क न दें",
+        descEn: "Liking YouTube videos or rating Google maps for hundreds of dollars is task fraud. Real jobs provide equipment free.",
+        descHi: "वीडियो लाइक करके हजारों कमाने का लालच हमेशा टास्क फ्रॉड होता है। असली कंपनियां काम के उपकरण खुद देती हैं।"
+      },
+      {
+        id: "rule_lottery_reality",
+        category: "lottery",
+        titleEn: "You Cannot Win a Lottery You Didn't Enter",
+        titleHi: "जिस लॉटरी का टिकट नहीं लिया, वह कभी नहीं जीत सकते",
+        descEn: "Never pay upfront 'processing tax' or 'clearance charges' to claim prizes, cars, or cash gifts.",
+        descHi: "कार या नकद इनाम पाने के लिए कभी भी 'टैक्स' या 'रजिस्ट्रेशन' के नाम पर पैसे ट्रांसफर न करें।"
+      },
+      {
+        id: "rule_domain_spelling",
+        category: "safe",
+        titleEn: "Inspect Web Addresses for Subtle Typos",
+        titleHi: "वेबसाइट के स्पेलिंग की बारीकी से जांच करें",
+        descEn: "Scammers use lookalike domains (e.g. examp1e-bank.test vs example-bank.com). Always bookmark genuine bank websites.",
+        descHi: "धोखेबाज असली जैसी दिखने वाली नकली स्पेलिंग बनाते हैं। हमेशा बैंक की आधिकारिक वेबसाइट को बुकमार्क करके रखें।"
+      }
+    ];
+
+    // --------------------------------------------------------------------------
+    // 6. PHISDOJO CORE CONTROLLER & STATE
+    // --------------------------------------------------------------------------
+    class PhishDojoApp {
+      constructor() {
+        this.sound = new SoundEngine();
+        this.currentLang = SafeStorage.getItem('phishdojo_lang') || 'en';
+        this.currentTheme = SafeStorage.getItem('phishdojo_theme') || 'dark';
+        this.fontSizeIndex = parseInt(SafeStorage.getItem('phishdojo_font_idx') || '0', 10);
+        
+        // Game State
+        this.currentTab = 'trainer';
+        this.sessionScenarios = [];
+        this.currentIndex = 0;
+        this.currentScenario = null;
+        this.userFlaggedTokens = new Set();
+        this.hasAnsweredCurrent = false;
+
+        // Player Profile & Adaptive Metrics
+        this.xp = parseInt(SafeStorage.getItem('phishdojo_xp') || '0', 10);
+        this.streak = 0;
+        this.bestStreak = parseInt(SafeStorage.getItem('phishdojo_best_streak') || '0', 10);
+        
+        this.categoryMistakes = {
+          kyc: 0,
+          courier: 0,
+          family: 0,
+          payment: 0,
+          utility: 0,
+          job: 0,
+          lottery: 0,
+          authority_spoof: 0,
+          safe: 0
+        };
+
+        this.triggerMistakes = {
+          urgency: 0,
+          authority: 0,
+          fear: 0,
+          reward: 0
+        };
+
+        this.totalAnsweredInSession = 0;
+        this.correctInSession = 0;
+        this.redFlagsIdentifiedCount = 0;
+        this.totalRedFlagsPossible = 0;
+        this.selectedFamilyPackKey = 'elders';
+      }
+
+      init() {
+        this.applyTheme(this.currentTheme);
+        this.applyFontSize(this.fontSizeIndex);
+        this.applyLanguage(this.currentLang);
+        this.updateHeaderStats();
+        this.setupEventListeners();
+        this.checkUrlRouting();
+      }
+
+      checkUrlRouting() {
+        const hash = window.location.hash;
+        if (hash.startsWith('#family')) {
+          this.switchTab('family');
+          // If contains preset
+          if (hash.includes('payments')) this.selectFamilyPack('payments');
+          else if (hash.includes('youth')) this.selectFamilyPack('youth');
+          else this.selectFamilyPack('elders');
+        } else if (hash.startsWith('#daily')) {
+          this.switchTab('daily');
+        } else {
+          this.startAdaptiveSession();
+        }
+      }
+
+      // ------------------------------------------------------------------------
+      // THEME & ACCESSIBILITY TOGGLES
+      // ------------------------------------------------------------------------
+      toggleTheme() {
+        this.sound.playTap();
+        const newTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
+        this.applyTheme(newTheme);
+      }
+
+      applyTheme(theme) {
+        this.currentTheme = theme;
+        SafeStorage.setItem('phishdojo_theme', theme);
+        const body = document.body;
+        if (theme === 'light') {
+          body.classList.add('light-theme');
+          document.getElementById('themeIcon').textContent = '☀️';
+        } else {
+          body.classList.remove('light-theme');
+          document.getElementById('themeIcon').textContent = '🌙';
+        }
+      }
+
+      cycleFontSize() {
+        this.sound.playTap();
+        this.fontSizeIndex = (this.fontSizeIndex + 1) % 3;
+        this.applyFontSize(this.fontSizeIndex);
+      }
+
+      applyFontSize(idx) {
+        this.fontSizeIndex = idx;
+        SafeStorage.setItem('phishdojo_font_idx', idx);
+        const body = document.body;
+        body.classList.remove('font-large', 'font-xlarge');
+        
+        const label = document.getElementById('fontScaleDisplay');
+        if (idx === 1) {
+          body.classList.add('font-large');
+          label.textContent = 'A++';
+        } else if (idx === 2) {
+          body.classList.add('font-xlarge');
+          label.textContent = 'A+++';
+        } else {
+          label.textContent = 'A+';
+        }
+      }
+
+      toggleAudio() {
+        this.sound.enabled = !this.sound.enabled;
+        const icon = document.getElementById('audioIcon');
+        icon.textContent = this.sound.enabled ? '🔊' : '🔇';
+        if (this.sound.enabled) this.sound.playTap();
+      }
+
+      toggleLanguage() {
+        this.sound.playTap();
+        const newLang = this.currentLang === 'en' ? 'hi' : 'en';
+        this.applyLanguage(newLang);
+      }
+
+      applyLanguage(lang) {
+        this.currentLang = lang;
+        SafeStorage.setItem('phishdojo_lang', lang);
+        document.getElementById('langDisplay').textContent = lang === 'en' ? '🌐 हिन्दी' : '🌐 English';
+
+        // Update all data-i18n elements
+        const elements = document.querySelectorAll('[data-i18n]');
+        elements.forEach(el => {
+          const key = el.getAttribute('data-i18n');
+          if (I18N[lang] && I18N[lang][key]) {
+            el.textContent = I18N[lang][key];
+          }
+        });
+
+        // Re-render current scenario if active
+        if (this.currentScenario && this.currentTab === 'trainer') {
+          this.renderScenario(this.currentScenario);
+        }
+        this.updateHeaderStats();
+      }
+
+      // ------------------------------------------------------------------------
+      // NAVIGATION ROUTING
+      // ------------------------------------------------------------------------
+      switchTab(tab) {
+        this.sound.playTap();
+        this.currentTab = tab;
+        ['trainer', 'daily', 'family', 'results'].forEach(t => {
+          const tabView = document.getElementById(`tabView${t.charAt(0).toUpperCase() + t.slice(1)}`);
+          if (tabView) tabView.style.display = (t === tab) ? 'block' : 'none';
+          
+          const navBtn = document.getElementById(`nav${t.charAt(0).toUpperCase() + t.slice(1)}`);
+          if (navBtn) {
+            if (t === tab) navBtn.classList.add('active');
+            else navBtn.classList.remove('active');
+          }
+        });
+
+        const statusRibbon = document.getElementById('statusRibbon');
+        if (tab === 'trainer') {
+          statusRibbon.style.display = 'flex';
+          if (!this.currentScenario) this.startAdaptiveSession();
+        } else {
+          statusRibbon.style.display = 'none';
+        }
+
+        if (tab === 'daily') {
+          this.setupScamOfDay();
+        }
+      }
+
+      // ------------------------------------------------------------------------
+      // ADAPTIVE DIFFICULTY & QUEUE GENERATION
+      // ------------------------------------------------------------------------
+      startAdaptiveSession(customScenarioIds = null) {
+        this.currentIndex = 0;
+        this.totalAnsweredInSession = 0;
+        this.correctInSession = 0;
+        this.redFlagsIdentifiedCount = 0;
+        this.totalRedFlagsPossible = 0;
+
+        if (customScenarioIds && customScenarioIds.length > 0) {
+          this.sessionScenarios = SCENARIOS.filter(s => customScenarioIds.includes(s.id));
+        } else {
+          // Generate an adaptive 10-question sequence
+          // Start with difficulty 1, then prioritize categories where user has made mistakes
+          const safePool = SCENARIOS.filter(s => !s.isScam);
+          const scamPool = SCENARIOS.filter(s => s.isScam);
+
+          // Calculate category failure weights
+          const weightedScams = [...scamPool].sort((a, b) => {
+            const failWeightA = (this.categoryMistakes[a.category] || 0) + (3 - a.difficulty);
+            const failWeightB = (this.categoryMistakes[b.category] || 0) + (3 - b.difficulty);
+            return failWeightB - failWeightA;
+          });
+
+          // Mix 7 adaptive scams + 3 safe scenarios
+          const selectedScams = weightedScams.slice(0, 7);
+          const selectedSafe = safePool.slice(0, 3);
+          
+          // Shuffle together
+          this.sessionScenarios = this.shuffleArray([...selectedScams, ...selectedSafe]);
+        }
+
+        this.loadScenarioAt(0);
+      }
+
+      shuffleArray(arr) {
+        const copy = [...arr];
+        for (let i = copy.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+      }
+
+      loadScenarioAt(index) {
+        if (index >= this.sessionScenarios.length) {
+          this.showFinalResults();
+          return;
+        }
+
+        this.currentIndex = index;
+        this.currentScenario = this.sessionScenarios[index];
+        this.hasAnsweredCurrent = false;
+        this.userFlaggedTokens.clear();
+
+        // Count possible red flags
+        if (this.currentScenario.isScam && this.currentScenario.tokens) {
+          this.totalRedFlagsPossible += this.currentScenario.tokens.filter(t => t.isFlag).length;
+        }
+
+        this.renderScenario(this.currentScenario);
+
+        // Update progress bar
+        const pct = Math.round(((index) / this.sessionScenarios.length) * 100);
+        document.getElementById('sessionProgressBar').style.width = `${pct}%`;
+        document.getElementById('scenarioProgressText').textContent = `${index + 1} / ${this.sessionScenarios.length}`;
+
+        // Reset UI Elements
+        document.getElementById('explainerCard').style.display = 'none';
+        document.getElementById('decisionPanel').style.display = 'grid';
+        document.getElementById('btnMarkScam').removeAttribute('disabled');
+        document.getElementById('btnMarkSafe').removeAttribute('disabled');
+        document.getElementById('flaggedCount').textContent = `0 flagged`;
+
+        // Scroll smoothly to top of mockup
+        document.getElementById('phoneFrame').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      // ------------------------------------------------------------------------
+      // REALISTIC MOCKUP RENDERER
+      // ------------------------------------------------------------------------
+      renderScenario(sc) {
+        const medium = sc.medium; // 'sms' | 'whatsapp' | 'email' | 'job'
+        const header = document.getElementById('mockupHeader');
+        const canvas = document.getElementById('mockupCanvas');
+        const bubble = document.getElementById('messageBubble');
+        const securityNotice = document.getElementById('securityNotice');
+        const emailSubjectBar = document.getElementById('emailSubjectBar');
+        const emailSubjectText = document.getElementById('emailSubjectText');
+        const fakeCtaContainer = document.getElementById('fakeCtaContainer');
+        const fakeCtaBtn = document.getElementById('fakeCtaBtn');
+
+        // Reset medium classes
+        header.className = `medium-header ${medium}`;
+        canvas.className = `phone-canvas ${medium === 'whatsapp' ? 'whatsapp-bg' : ''}`;
+        bubble.className = `message-bubble incoming-${medium} ${medium === 'email' ? 'email-card' : ''}`;
+
+        // Populate Sender Info
+        document.getElementById('mockupAvatar').textContent = sc.sender.avatar || '💬';
+        document.getElementById('mockupSenderName').textContent = sc.sender.name;
+        document.getElementById('mockupSenderHandle').textContent = sc.sender.handle;
+        
+        document.getElementById('mockupVerifiedBadge').style.display = sc.sender.verified ? 'inline-flex' : 'none';
+        document.getElementById('mockupUnverifiedBadge').style.display = sc.sender.verified ? 'none' : 'inline-block';
+
+        // Medium specifics
+        securityNotice.style.display = (medium === 'whatsapp') ? 'flex' : 'none';
+        
+        if (medium === 'email' && sc.subject) {
+          emailSubjectBar.style.display = 'block';
+          emailSubjectText.textContent = sc.subject[this.currentLang] || sc.subject.en;
+        } else {
+          emailSubjectBar.style.display = 'none';
+        }
+
+        // Render interactive spot tokens
+        const rawText = sc.content[this.currentLang] || sc.content.en;
+        this.renderInteractiveText(rawText, sc.tokens || []);
+
+        // Optional CTA button for emails or fake links
+        if (sc.isScam && medium === 'email') {
+          fakeCtaContainer.style.display = 'block';
+          fakeCtaBtn.textContent = this.currentLang === 'hi' ? '👉 अभी सत्यापित करें' : '👉 Verify Account Now';
+        } else {
+          fakeCtaContainer.style.display = 'none';
+        }
+
+        document.getElementById('mockupTimestamp').textContent = (this.currentLang === 'hi') ? "आज, 11:42 AM" : "Today, 11:42 AM";
+      }
+
+      renderInteractiveText(text, tokens) {
+        const container = document.getElementById('interactiveMessageBody');
+        container.innerHTML = '';
+
+        if (!tokens || tokens.length === 0) {
+          container.textContent = text;
+          return;
+        }
+
+        // Split text matching known token substrings
+        let remaining = text;
+        const fragment = document.createDocumentFragment();
+
+        // Create a list of target words for current language
+        const targetPhrases = tokens.map(t => {
+          return {
+            phrase: (this.currentLang === 'hi' ? t.textHi : t.textEn) || t.textEn,
+            meta: t
+          };
+        }).filter(item => item.phrase && item.phrase.length > 0);
+
+        // Sort descending by phrase length to avoid partial collisions
+        targetPhrases.sort((a, b) => b.phrase.length - a.phrase.length);
+
+        // Simple tokenizer
+        let pos = 0;
+        while (pos < text.length) {
+          let matchFound = null;
+          let matchIndex = -1;
+
+          for (const item of targetPhrases) {
+            const idx = text.indexOf(item.phrase, pos);
+            if (idx !== -1 && (matchIndex === -1 || idx < matchIndex)) {
+              matchIndex = idx;
+              matchFound = item;
+            }
+          }
+
+          if (matchFound && matchIndex !== -1) {
+            // Append plain text before match
+            if (matchIndex > pos) {
+              fragment.appendChild(document.createTextNode(text.substring(pos, matchIndex)));
+            }
+
+            // Append interactive token span
+            const tokenSpan = document.createElement('span');
+            tokenSpan.className = 'spot-token';
+            tokenSpan.textContent = matchFound.phrase;
+            tokenSpan.dataset.phrase = matchFound.phrase;
+            tokenSpan.dataset.isFlag = String(matchFound.meta.isFlag);
+            tokenSpan.dataset.reason = (this.currentLang === 'hi' ? matchFound.meta.reasonHi : matchFound.meta.reasonEn) || matchFound.meta.reasonEn;
+
+            tokenSpan.addEventListener('click', (e) => this.handleTokenClick(tokenSpan));
+
+            fragment.appendChild(tokenSpan);
+            pos = matchIndex + matchFound.phrase.length;
+          } else {
+            // No more matches
+            fragment.appendChild(document.createTextNode(text.substring(pos)));
+            break;
+          }
+        }
+
+        container.appendChild(fragment);
+      }
+
+      handleTokenClick(tokenEl) {
+        if (this.hasAnsweredCurrent) return; // locked after answering
+        this.sound.playTap();
+        
+        const phrase = tokenEl.dataset.phrase;
+        if (this.userFlaggedTokens.has(phrase)) {
+          this.userFlaggedTokens.delete(phrase);
+          tokenEl.classList.remove('user-flagged');
+        } else {
+          this.userFlaggedTokens.add(phrase);
+          tokenEl.classList.add('user-flagged');
+        }
+
+        const count = this.userFlaggedTokens.size;
+        document.getElementById('flaggedCount').textContent = `${count} flagged`;
+      }
+
+      // ------------------------------------------------------------------------
+      // EVALUATION & EXPLAINER LOGIC
+      // ------------------------------------------------------------------------
+      submitDecision(userSaidScam) {
+        if (this.hasAnsweredCurrent) return;
+        this.hasAnsweredCurrent = true;
+
+        const sc = this.currentScenario;
+        const isCorrect = (userSaidScam === sc.isScam);
+        this.totalAnsweredInSession++;
+
+        // Disable decision buttons
+        document.getElementById('btnMarkScam').setAttribute('disabled', 'true');
+        document.getElementById('btnMarkSafe').setAttribute('disabled', 'true');
+
+        // Reveal token highlights inside message
+        const allTokens = document.querySelectorAll('.spot-token');
+        allTokens.forEach(t => {
+          if (t.dataset.isFlag === 'true') {
+            t.classList.add('revealed-flag');
+            if (this.userFlaggedTokens.has(t.dataset.phrase)) {
+              this.redFlagsIdentifiedCount++;
+            }
+          }
+        });
+
+        // XP & Scoring Calculations
+        let xpGained = 0;
+        if (isCorrect) {
+          this.correctInSession++;
+          this.streak++;
+          if (this.streak > this.bestStreak) {
+            this.bestStreak = this.streak;
+            SafeStorage.setItem('phishdojo_best_streak', this.bestStreak);
+          }
+          xpGained += 50;
+          // Bonus XP for spotting red flags
+          const spottedBonus = this.userFlaggedTokens.size * 10;
+          xpGained += spottedBonus;
+
+          this.sound.playChime();
+          this.spawnFloatingXp(`+${xpGained} XP`);
+        } else {
+          this.streak = 0;
+          this.sound.playBuzz();
+          
+          // Track mistakes for adaptive engine
+          this.categoryMistakes[sc.category] = (this.categoryMistakes[sc.category] || 0) + 1;
+          if (sc.triggers) {
+            sc.triggers.forEach(tr => {
+              this.triggerMistakes[tr] = (this.triggerMistakes[tr] || 0) + 1;
+            });
+          }
+        }
+
+        this.xp += xpGained;
+        SafeStorage.setItem('phishdojo_xp', this.xp);
+        this.updateHeaderStats();
+
+        // Show Explainer Breakdown
+        this.renderExplainer(isCorrect, userSaidScam, sc, xpGained);
+      }
+
+      renderExplainer(isCorrect, userSaidScam, sc, xpGained) {
+        const card = document.getElementById('explainerCard');
+        const banner = document.getElementById('explainerBanner');
+        const resultIcon = document.getElementById('resultIcon');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultXp = document.getElementById('resultXpGain');
+
+        card.style.display = 'block';
+
+        if (isCorrect) {
+          banner.className = 'explainer-banner correct';
+          resultIcon.textContent = '🎉';
+          resultTitle.textContent = sc.isScam ? I18N[this.currentLang].correct_scam : I18N[this.currentLang].correct_safe;
+          resultXp.textContent = `+${xpGained} XP`;
+          resultXp.style.display = 'inline';
+        } else {
+          banner.className = 'explainer-banner wrong';
+          resultIcon.textContent = '⚠️';
+          resultTitle.textContent = sc.isScam ? I18N[this.currentLang].wrong_fell_for_scam : I18N[this.currentLang].wrong_false_alarm;
+          resultXp.style.display = 'none';
+        }
+
+        // 4 Psychological Levers highlight
+        const triggers = sc.triggers || [];
+        ['urgency', 'authority', 'fear', 'reward'].forEach(key => {
+          const badge = document.getElementById(`trigger${key.charAt(0).toUpperCase() + key.slice(1)}`);
+          if (triggers.includes(key)) {
+            badge.classList.add('active');
+          } else {
+            badge.classList.remove('active');
+          }
+        });
+
+        // Hide triggers section for safe messages
+        document.getElementById('triggersContainer').style.display = sc.isScam ? 'flex' : 'none';
+
+        // Red Flags List
+        const redFlagsBox = document.getElementById('redFlagsBox');
+        const redFlagsList = document.getElementById('redFlagsList');
+        const safeReasonBox = document.getElementById('safeReasonBox');
+        const safeReasonText = document.getElementById('safeExplanationText');
+
+        if (sc.isScam) {
+          redFlagsBox.style.display = 'block';
+          safeReasonBox.style.display = 'none';
+          redFlagsList.innerHTML = '';
+
+          (sc.tokens || []).filter(t => t.isFlag).forEach(item => {
+            const row = document.createElement('div');
+            row.className = 'red-flag-item';
+            const quote = (this.currentLang === 'hi' ? item.textHi : item.textEn) || item.textEn;
+            const explanation = (this.currentLang === 'hi' ? item.reasonHi : item.reasonEn) || item.reasonEn;
+            row.innerHTML = `<span class="red-flag-quote">"${quote}"</span><div>${explanation}</div>`;
+            redFlagsList.appendChild(row);
+          });
+        } else {
+          redFlagsBox.style.display = 'none';
+          safeReasonBox.style.display = 'block';
+          safeReasonText.textContent = sc.safeReason ? (sc.safeReason[this.currentLang] || sc.safeReason.en) : "";
+        }
+
+        // Golden Takeaway Rule
+        const takeaway = sc.takeaway ? (sc.takeaway[this.currentLang] || sc.takeaway.en) : "";
+        document.getElementById('takeawayTipText').textContent = takeaway;
+
+        // Smooth scroll to explainer
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      nextScenario() {
+        this.sound.playTap();
+        this.loadScenarioAt(this.currentIndex + 1);
+      }
+
+      // ------------------------------------------------------------------------
+      // TEXT TO SPEECH (VOICE NARRATION FOR ELDERLY)
+      // ------------------------------------------------------------------------
+      speakCurrentMessage() {
+        if (!('speechSynthesis' in window)) {
+          this.showToast("Speech synthesis not supported in this browser.");
+          return;
+        }
+
+        window.speechSynthesis.cancel(); // Stop any ongoing speech
+
+        if (!this.currentScenario) return;
+        const text = this.currentScenario.content[this.currentLang] || this.currentScenario.content.en;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = (this.currentLang === 'hi') ? 'hi-IN' : 'en-US';
+        utterance.rate = 0.9; // Slightly slower, clear elderly pacing
+
+        window.speechSynthesis.speak(utterance);
+        this.showToast(this.currentLang === 'hi' ? 'ऑडियो संदेश चल रहा है...' : 'Reading message aloud...');
+      }
+
+      // ------------------------------------------------------------------------
+      // SCAM OF THE DAY ENGINE
+      // ------------------------------------------------------------------------
+      setupScamOfDay() {
+        const today = new Date();
+        const dateStr = today.toLocaleDateString(this.currentLang === 'hi' ? 'hi-IN' : 'en-US', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        });
+        document.getElementById('dailyDate').textContent = dateStr;
+
+        // Deterministic daily pick
+        const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+        const scamScenarios = SCENARIOS.filter(s => s.isScam);
+        const dailyScenario = scamScenarios[dayOfYear % scamScenarios.length];
+
+        this.dailyFeaturedScenario = dailyScenario;
+        document.getElementById('dailyTitle').textContent = dailyScenario.sender.name + " (" + dailyScenario.category.toUpperCase() + ")";
+        
+        const preview = dailyScenario.content[this.currentLang] || dailyScenario.content.en;
+        document.getElementById('dailyStory').textContent = preview;
+
+        const defense = dailyScenario.takeaway[this.currentLang] || dailyScenario.takeaway.en;
+        document.getElementById('dailyDefenseRule').textContent = defense;
+      }
+
+      claimDailyDojo() {
+        if (this.dailyFeaturedScenario) {
+          this.startAdaptiveSession([this.dailyFeaturedScenario.id]);
+          this.switchTab('trainer');
+        }
+      }
+
+      // ------------------------------------------------------------------------
+      // FAMILY MODE LOGIC
+      // ------------------------------------------------------------------------
+      selectFamilyPack(packKey) {
+        this.sound.playTap();
+        this.selectedFamilyPackKey = packKey;
+        ['elders', 'payments', 'youth'].forEach(p => {
+          const el = document.getElementById(`pack${p.charAt(0).toUpperCase() + p.slice(1)}`);
+          if (p === packKey) el.classList.add('selected');
+          else el.classList.remove('selected');
+        });
+
+        // Generate URL and Code
+        const currentUrlBase = window.location.href.split('#')[0];
+        const shareUrl = `${currentUrlBase}#family=${packKey}`;
+        document.getElementById('familyShareUrl').value = shareUrl;
+
+        const codeMap = { elders: 'DOJO-82', payments: 'DOJO-45', youth: 'DOJO-91' };
+        document.getElementById('familyCodeDisplay').textContent = codeMap[packKey] || 'DOJO-88';
+      }
+
+      copyFamilyLink() {
+        this.sound.playTap();
+        const input = document.getElementById('familyShareUrl');
+        input.select();
+        try {
+          navigator.clipboard.writeText(input.value);
+          this.showToast(I18N[this.currentLang].toast_copied);
+        } catch (e) {
+          document.execCommand('copy');
+          this.showToast(I18N[this.currentLang].toast_copied);
+        }
+      }
+
+      shareViaWhatsApp() {
+        this.sound.playTap();
+        const url = document.getElementById('familyShareUrl').value;
+        const text = (this.currentLang === 'hi')
+          ? `नमस्ते! मैंने आपके लिए PhishDojo पर 5 मिनट का आसान सुरक्षा क्विज़ बनाया है ताकि आप बैंक और कूरियर के फर्जी मैसेज पहचान सकें: ${url}`
+          : `Hi! I created a 5-minute safety game for you on PhishDojo to learn how to spot fake bank messages and courier scams: ${url}`;
+        
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+      }
+
+      // ------------------------------------------------------------------------
+      // FINAL SCORE & PERSONALIZED SAFETY CHECKLIST
+      // ------------------------------------------------------------------------
+      showFinalResults() {
+        this.switchTab('results');
+        this.sound.playFanfare();
+
+        // Calculate Safety Score (0-100)
+        const total = this.totalAnsweredInSession || 1;
+        const accuracyPct = Math.round((this.correctInSession / total) * 100);
+        
+        // Bonus for spotting red flags
+        let redFlagRate = 1;
+        if (this.totalRedFlagsPossible > 0) {
+          redFlagRate = Math.min(1, this.redFlagsIdentifiedCount / this.totalRedFlagsPossible);
+        }
+        
+        const weightedScore = Math.min(100, Math.round((accuracyPct * 0.75) + (redFlagRate * 25)));
+        
+        // Animate score counter
+        document.getElementById('finalScoreVal').textContent = weightedScore;
+        const dashOffset = 440 - (440 * (weightedScore / 100));
+        document.getElementById('scoreRingCircle').style.strokeDashoffset = dashOffset;
+
+        // Grade Title & Feedback
+        const gradeEl = document.getElementById('finalGradeTitle');
+        const feedbackEl = document.getElementById('finalFeedbackSummary');
+
+        if (weightedScore >= 90) {
+          gradeEl.textContent = (this.currentLang === 'hi') ? "ग्रेड S: साइबर सेंसेई (Phish Sensei)" : "Grade S: Phish Sensei";
+          gradeEl.style.color = "#10b981";
+          feedbackEl.textContent = (this.currentLang === 'hi')
+            ? "उत्कृष्ट प्रदर्शन! आप धोखेबाजों के मनोवैज्ञानिक हथियारों को आसानी से पहचान लेते हैं।"
+            : "Masterful performance! You are virtually immune to urgency manipulation and spoofing.";
+        } else if (weightedScore >= 75) {
+          gradeEl.textContent = (this.currentLang === 'hi') ? "ग्रेड A: साइबर रक्षक (Cyber Guardian)" : "Grade A: Cyber Guardian";
+          gradeEl.style.color = "#38bdf8";
+          feedbackEl.textContent = (this.currentLang === 'hi')
+            ? "बहुत अच्छा! आप अधिकांश फर्जीवाड़े पकड़ लेते हैं, बस कुछ सूक्ष्म कूरियर लिंक्स पर ध्यान दें।"
+            : "Strong resilience! You caught the majority of scams. Watch out for subtle fake delivery fees.";
+        } else if (weightedScore >= 60) {
+          gradeEl.textContent = (this.currentLang === 'hi') ? "ग्रेड B: स्कैम स्पॉटर (Scam Spotter)" : "Grade B: Scam Spotter";
+          gradeEl.style.color = "#f59e0b";
+          feedbackEl.textContent = (this.currentLang === 'hi')
+            ? "अच्छा प्रयास। लेकिन जल्दबाजी और डर पैदा करने वाले संदेशों में आप थोड़ा भ्रमित हो जाते हैं।"
+            : "Decent awareness. You get tricked when scammers manufacture panic or artificial deadlines.";
+        } else {
+          gradeEl.textContent = (this.currentLang === 'hi') ? "ग्रेड C: शुरुआती छात्र (Dojo Apprentice)" : "Grade C: Dojo Apprentice";
+          gradeEl.style.color = "#ef4444";
+          feedbackEl.textContent = (this.currentLang === 'hi')
+            ? "आपको अभ्यास की आवश्यकता है। याद रखें: कोई भी बैंक SMS में तुरंत ब्लॉक करने की धमकी नहीं देता।"
+            : "Needs practice. Remember: legitimate banks never send links threatening instant suspension.";
+        }
+
+        // Render Badges
+        this.renderBadges(weightedScore);
+
+        // Render Psychological Vector Breakdown Chart
+        this.renderChartMetrics();
+
+        // Render Personalized 8-Point Checklist
+        this.renderPersonalizedChecklist();
+      }
+
+      renderBadges(score) {
+        const shelf = document.getElementById('badgesShelf');
+        shelf.innerHTML = '';
+
+        const badgeDefs = [
+          { nameEn: "White Belt (Beginner)", nameHi: "व्हाइट बेल्ट (शुरुआती)", icon: "🥋", unlocked: true },
+          { nameEn: "Scam Spotter", nameHi: "स्कैम स्पॉटर", icon: "🕵️", unlocked: this.correctInSession >= 5 },
+          { nameEn: "Cyber Guardian", nameHi: "साइबर रक्षक", icon: "🛡️", unlocked: score >= 75 },
+          { nameEn: "Phish Sensei", nameHi: "फिश सेंसेई", icon: "🧠", unlocked: score >= 90 },
+          { nameEn: "Family Protector", nameHi: "फैमिली रक्षक", icon: "👨‍👩‍👧", unlocked: this.xp >= 150 }
+        ];
+
+        badgeDefs.forEach(b => {
+          const div = document.createElement('div');
+          div.className = `badge-item ${b.unlocked ? 'unlocked' : 'locked'}`;
+          const label = (this.currentLang === 'hi') ? b.nameHi : b.nameEn;
+          div.innerHTML = `<span>${b.icon}</span><span>${label}</span>`;
+          shelf.appendChild(div);
+        });
+      }
+
+      renderChartMetrics() {
+        const calcResist = (mistakes) => Math.max(30, Math.min(100, 100 - (mistakes * 25)));
+
+        const urgencyVal = calcResist(this.triggerMistakes.urgency || 0);
+        const authVal = calcResist(this.triggerMistakes.authority || 0);
+        const fearVal = calcResist(this.triggerMistakes.fear || 0);
+        const rewardVal = calcResist(this.triggerMistakes.reward || 0);
+        const safeVal = calcResist(this.categoryMistakes.safe || 0);
+
+        document.getElementById('chartValUrgency').textContent = `${urgencyVal}%`;
+        document.getElementById('barUrgency').style.width = `${urgencyVal}%`;
+
+        document.getElementById('chartValAuthority').textContent = `${authVal}%`;
+        document.getElementById('barAuthority').style.width = `${authVal}%`;
+
+        document.getElementById('chartValFear').textContent = `${fearVal}%`;
+        document.getElementById('barFear').style.width = `${fearVal}%`;
+
+        document.getElementById('chartValReward').textContent = `${rewardVal}%`;
+        document.getElementById('barReward').style.width = `${rewardVal}%`;
+
+        document.getElementById('chartValSafe').textContent = `${safeVal}%`;
+        document.getElementById('barSafe').style.width = `${safeVal}%`;
+      }
+
+      renderPersonalizedChecklist() {
+        const grid = document.getElementById('checklistGrid');
+        grid.innerHTML = '';
+
+        SAFETY_CHECKLIST_RULES.forEach((rule, idx) => {
+          const item = document.createElement('div');
+          item.className = 'check-item';
+
+          // Highlight rule if user specifically struggled with this category
+          const hasFailedCategory = (this.categoryMistakes[rule.category] && this.categoryMistakes[rule.category] > 0);
+          if (hasFailedCategory) {
+            item.classList.add('personalized-alert');
+          }
+
+          const alertBadge = hasFailedCategory
+            ? `<span class="check-badge-alert">${(this.currentLang === 'hi') ? 'विशेष ध्यान दें' : 'NEEDS ATTENTION'}</span>`
+            : '';
+
+          const title = (this.currentLang === 'hi') ? rule.titleHi : rule.titleEn;
+          const desc = (this.currentLang === 'hi') ? rule.descHi : rule.descEn;
+
+          item.innerHTML = `
+            <div class="check-num">${idx + 1}</div>
+            <div style="flex: 1;">
+              ${alertBadge}
+              <strong style="display: block; font-size: 0.95rem; margin-bottom: 0.2rem;">${title}</strong>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.45;">${desc}</p>
+            </div>
+          `;
+          grid.appendChild(item);
+        });
+      }
+
+      copySafetyChecklist() {
+        this.sound.playTap();
+        let checklistText = `=== PhishDojo 8-Point Cyber Safety Checklist ===\n\n`;
+        SAFETY_CHECKLIST_RULES.forEach((r, i) => {
+          const title = (this.currentLang === 'hi') ? r.titleHi : r.titleEn;
+          const desc = (this.currentLang === 'hi') ? r.descHi : r.descEn;
+          checklistText += `${i + 1}. ${title}\n   ${desc}\n\n`;
+        });
+        checklistText += `Trained at PhishDojo - Cybersecurity & Digital Safety`;
+
+        try {
+          navigator.clipboard.writeText(checklistText);
+          this.showToast(I18N[this.currentLang].toast_checklist_copied);
+        } catch (e) {
+          this.showToast("Could not access clipboard.");
+        }
+      }
+
+      restartTraining() {
+        this.sound.playTap();
+        this.switchTab('trainer');
+        this.startAdaptiveSession();
+      }
+
+      // ------------------------------------------------------------------------
+      // UI HELPERS & VISUAL NOTIFICATIONS
+      // ------------------------------------------------------------------------
+      updateHeaderStats() {
+        document.getElementById('statStreak').textContent = this.streak;
+        document.getElementById('statXp').textContent = this.xp;
+
+        const rankBadge = document.getElementById('statBadgeTitle');
+        if (this.xp >= 500) rankBadge.textContent = (this.currentLang === 'hi') ? "फिश सेंसेई" : "Phish Sensei";
+        else if (this.xp >= 250) rankBadge.textContent = (this.currentLang === 'hi') ? "साइबर रक्षक" : "Cyber Guardian";
+        else if (this.xp >= 100) rankBadge.textContent = (this.currentLang === 'hi') ? "स्कैम स्पॉटर" : "Scam Spotter";
+        else rankBadge.textContent = (this.currentLang === 'hi') ? "व्हाइट बेल्ट" : "White Belt";
+      }
+
+      spawnFloatingXp(text) {
+        const floatEl = document.createElement('div');
+        floatEl.className = 'floating-xp';
+        floatEl.textContent = text;
+        floatEl.style.left = '50%';
+        floatEl.style.top = '40%';
+        document.body.appendChild(floatEl);
+
+        setTimeout(() => {
+          if (floatEl.parentNode) floatEl.parentNode.removeChild(floatEl);
+        }, 1200);
+      }
+
+      showToast(msg) {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = 'toast-msg';
+        toast.innerHTML = `<span>🛡️</span><span>${msg}</span>`;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+          if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 3000);
+      }
+
+      setupEventListeners() {
+        // Keyboard Shortcuts (1 = Scam, 2 = Safe, Space/Enter = Continue)
+        window.addEventListener('keydown', (e) => {
+          if (this.currentTab !== 'trainer') return;
+          if (e.key === '1') {
+            if (!this.hasAnsweredCurrent) this.submitDecision(true);
+          } else if (e.key === '2') {
+            if (!this.hasAnsweredCurrent) this.submitDecision(false);
+          } else if (e.key === 'Enter' || e.key === ' ') {
+            if (this.hasAnsweredCurrent) {
+              e.preventDefault();
+              this.nextScenario();
+            }
+          }
+        });
+      }
+    }
+
+    // Initialize application on page load
+    let app;
+    window.addEventListener('DOMContentLoaded', () => {
+      app = new PhishDojoApp();
+      app.init();
+    });
+  </script>
+</body>
+</html>
