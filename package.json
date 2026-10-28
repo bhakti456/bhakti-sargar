@@ -1,0 +1,17 @@
+{
+  "name": "phishdojo",
+  "version": "1.0.0",
+  "description": "PhishDojo - Adaptive Scam Awareness Trainer for Families and Seniors",
+  "private": true,
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "cybersecurity",
+    "scam-awareness",
+    "phishing-defense",
+    "education"
+  ],
+  "author": "Bhakti Sargar",
+  "license": "MIT"
+}
